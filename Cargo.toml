@@ -4,11 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-blockifier = "=0.15.0-rc.1"
-starknet_api = "=0.15.0-rc.1"
+# build on top of: 60d083a9fe2e455cfa3190bf1e8b4420d1fb6a40 commit 
+# build on top of: v0.15.0-rc.1
+blockifier = { git = "https://github.com/Mohiiit/sequencer", rev = "8ef16b458293f6ce40d325789d8f41df8bcbb45b", features = ["testing"]}
+starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev = "8ef16b458293f6ce40d325789d8f41df8bcbb45b", features = ["testing"]}
+
+starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev = "8ef16b458293f6ce40d325789d8f41df8bcbb45b", features = ["testing"]}
+
 cairo-lang-starknet = { version = "=2.12.0-dev.1" }
 cairo-lang-starknet-classes = { version = "=2.12.0-dev.1" }
 cairo-lang-utils = { version = "=2.12.0-dev.1" }
 cairo-lang-casm = { version = "=2.12.0-dev.1" }
 cairo-vm = "2.2.0"
+starknet = "0.11.0"
 
