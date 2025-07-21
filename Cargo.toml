@@ -1,0 +1,14 @@
+[package]
+name = "snos-poc"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+blockifier = "=0.15.0-rc.1"
+starknet_api = "=0.15.0-rc.1"
+cairo-lang-starknet = { version = "=2.12.0-dev.1" }
+cairo-lang-starknet-classes = { version = "=2.12.0-dev.1" }
+cairo-lang-utils = { version = "=2.12.0-dev.1" }
+cairo-lang-casm = { version = "=2.12.0-dev.1" }
+cairo-vm = "2.2.0"
+
