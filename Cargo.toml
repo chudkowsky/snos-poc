@@ -1,20 +1,81 @@
-[package]
-name = "snos-poc"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "rpc-client",
+    "starknet-os-types"
+]
+resolver = "2"
 
-[dependencies]
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
 # build on top of: 60d083a9fe2e455cfa3190bf1e8b4420d1fb6a40 commit 
 # build on top of: v0.15.0-rc.1
-blockifier = { git = "https://github.com/Mohiiit/sequencer", rev = "8ef16b458293f6ce40d325789d8f41df8bcbb45b", features = ["testing"]}
-starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev = "8ef16b458293f6ce40d325789d8f41df8bcbb45b", features = ["testing"]}
-
-starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev = "8ef16b458293f6ce40d325789d8f41df8bcbb45b", features = ["testing"]}
+blockifier = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
+starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
+starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
+starknet_patricia = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
+shared_execution_objects = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"}
 
 cairo-lang-starknet = { version = "=2.12.0-dev.1" }
 cairo-lang-starknet-classes = { version = "=2.12.0-dev.1" }
 cairo-lang-utils = { version = "=2.12.0-dev.1" }
 cairo-lang-casm = { version = "=2.12.0-dev.1" }
 cairo-vm = "2.2.0"
-starknet = "0.11.0"
+starknet = "0.16.0"
+starknet-types-core = "0.1.5"
+
+log = "0.4.19"
+reqwest = { version = "0.11.18", features = ["blocking", "json"] }
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = { version = "1.0.105", features = ["arbitrary_precision"] }
+tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
+thiserror = "1.0.48"
+flate2 = "1.0.32"
+num-bigint = "0.4"
+once_cell = "1.20.0"
+pathfinder-gateway-types = { git = "https://github.com/Moonsong-Labs/pathfinder", rev = "9c19d9a37be8f447ec4548456c440ccbd0e44260", package = "starknet-gateway-types" }
+pathfinder-common = { git = "https://github.com/Moonsong-Labs/pathfinder", rev = "9c19d9a37be8f447ec4548456c440ccbd0e44260", package = "pathfinder-common" }
+pathfinder-serde = { git = "https://github.com/Moonsong-Labs/pathfinder", rev = "9c19d9a37be8f447ec4548456c440ccbd0e44260", package = "pathfinder-serde" }
+
+serde_with = "3.3.0"
+starknet-core = "0.15.0"
+starknet-crypto = "0.7.0"
+indoc = "2"
+rstest = "0.18.2"
+
+rpc-client = { path = "rpc-client" }
+starknet-os-types = {path = "starknet-os-types"}
+
+
+# Now we need to add a main package section
+[package]
+name = "snos-poc"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+rpc-client = {workspace = true}
+starknet-os-types = {workspace = true}
+blockifier = { workspace = true }
+starknet_api = { workspace = true }
+starknet_os = { workspace = true }
+starknet_patricia = { workspace = true }
+shared_execution_objects = {workspace = true}
+
+cairo-lang-starknet = { workspace = true }
+cairo-lang-starknet-classes = { workspace = true }
+cairo-lang-utils = { workspace = true }
+cairo-lang-casm = { workspace = true }
+cairo-vm = { workspace = true }
+starknet = { workspace = true }
+starknet-types-core = { workspace = true }
+starknet-crypto = { workspace = true}
+log = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = {workspace = true}
 
