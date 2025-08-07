@@ -156,7 +156,7 @@ pub fn build_block_context(
 }
 
 
-async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient, state_reader: AsyncRpcStateReader) -> (OsBlockInput, BTreeMap<ClassHash, CasmContractClass>, BTreeMap<ClassHash, ContractClass>) {
+async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient) -> (OsBlockInput, BTreeMap<ClassHash, CasmContractClass>, BTreeMap<ClassHash, ContractClass>) {
     println!("📋 collect_single_block_info: Starting for block {}", block_number);
     let block_id = BlockId::Number(block_number);
     let previous_block_id = if block_number == 0 { None } else { Some(BlockId::Number(block_number - 1)) };
@@ -498,7 +498,7 @@ async fn main() {
     println!("📖 State reader created for block 1309254");
     
     println!("🔍 Starting to collect block info for block 1309254...");
-    let (block_input, compiled_classes, deprecated_compiled_classes) = collect_single_block_info(1309254, rpc_client.clone(), blockifier_state_reader.clone()).await;
+    let (block_input, compiled_classes, deprecated_compiled_classes) = collect_single_block_info(1309254, rpc_client.clone()).await;
     println!("✅ Block info collection completed!");
 
     // println!("the block_input: {:?}", block_input);
@@ -507,7 +507,17 @@ async fn main() {
 
     println!("📋 Preparing OS inputs...");
     let os_block_inputs = vec![block_input];
-    let cached_state_inputs = vec![CachedStateInput::default()];
+
+    let mut storage_changes: HashMap<ContractAddress, HashMap<StorageKey, Felt>> = HashMap::with_capacity(1);
+    let mut inside_storage: HashMap<StorageKey, Felt> = HashMap::with_capacity(1);
+    inside_storage.insert(StorageKey::try_from(Felt::from(1309244)).unwrap(), Felt::from_hex_unchecked("0x77d266951329759aac4efb30ea2235380a97f4f3f130172e5604557ccf0b3c9"));
+    storage_changes.insert(ContractAddress::try_from(Felt::ONE).unwrap(), inside_storage);
+    let cached_state_inputs = vec![CachedStateInput {
+        storage: storage_changes,
+        address_to_class_hash: HashMap::default(),
+        address_to_nonce: HashMap::default(),
+        class_hash_to_compiled_class_hash: HashMap::default(),
+    }];
     println!("✅ OS inputs prepared with {} block inputs and {} cached state inputs", os_block_inputs.len(), cached_state_inputs.len());
 
     println!("⚙️  Building OS hints configuration...");
@@ -518,7 +528,7 @@ async fn main() {
             use_kzg_da: false,
             chain_info: OsChainInfo {
                 chain_id: ChainId::Sepolia,
-                strk_fee_token_address: ContractAddress::try_from(Felt::from_hex_unchecked("0xabcd")).expect("issue while converting the contract address"),
+                strk_fee_token_address: ContractAddress::try_from(Felt::from_hex_unchecked("0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d")).expect("issue while converting the contract address"),
             },
         },
         os_input: StarknetOsInput {

@@ -38,6 +38,7 @@ fn to_state_err<E: ToString>(e: E) -> StateError {
 
 impl AsyncRpcStateReader {
     pub async fn get_storage_at_async(&self, contract_address: ContractAddress, key: StorageKey) -> StateResult<Felt> {
+        println!("got a request of get_storage_at with parameters the contract address: {:?} and the key: {:?}", contract_address, key);
         let storage_value = match self
             .rpc_client
             .starknet_rpc()
@@ -53,6 +54,7 @@ impl AsyncRpcStateReader {
     }
 
     pub async fn get_nonce_at_async(&self, contract_address: ContractAddress) -> StateResult<Nonce> {
+        println!("got a request of get_nonce_at with parameters the contract address: {:?}", contract_address);
         let res = self.rpc_client.starknet_rpc().get_nonce(self.block_id, *contract_address.key()).await;
         let nonce = match res {
             Ok(value) => Ok(value),
@@ -63,6 +65,7 @@ impl AsyncRpcStateReader {
     }
 
     pub async fn get_class_hash_at_async(&self, contract_address: ContractAddress) -> StateResult<ClassHash> {
+        println!("got a request of get_class_hash_at with parameters the contract address: {:?}", contract_address);
         let class_hash =
             match self.rpc_client.starknet_rpc().get_class_hash_at(self.block_id, *contract_address.key()).await {
                 Ok(class_hash) => Ok(class_hash),
@@ -74,6 +77,7 @@ impl AsyncRpcStateReader {
     }
 
     pub async fn get_compiled_class_async(&self, class_hash: ClassHash) -> StateResult<RunnableCompiledClass> {
+        println!("got a request of get_compiled_class with parameters the class hash: {:?}", class_hash);
         let contract_class = match self.rpc_client.starknet_rpc().get_class(self.block_id, class_hash.0).await {
             Ok(contract_class) => Ok(contract_class),
             // If the ContractClass is declared in the current block,
@@ -165,6 +169,7 @@ impl AsyncRpcStateReader {
     }
 
     pub async fn get_compiled_class_hash_async(&self, class_hash: ClassHash) -> StateResult<CompiledClassHash> {
+        println!("got a request of get_compiled_class_hash with parameters the class hash: {:?}", class_hash);
         let contract_class = self
             .rpc_client
             .starknet_rpc()
