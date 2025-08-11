@@ -12,11 +12,11 @@ edition = "2021"
 [workspace.dependencies]
 # build on top of: 60d083a9fe2e455cfa3190bf1e8b4420d1fb6a40 commit 
 # build on top of: v0.15.0-rc.1
-blockifier = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
-starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
-starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
-starknet_patricia = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41", features = ["testing"]}
-shared_execution_objects = { git = "https://github.com/Mohiiit/sequencer", rev = "65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"}
+blockifier = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
+starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
+starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
+starknet_patricia = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
+shared_execution_objects = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba"}
 
 cairo-lang-starknet = { version = "=2.12.0-dev.1" }
 cairo-lang-starknet-classes = { version = "=2.12.0-dev.1" }
@@ -78,4 +78,5 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = {workspace = true}
+env_logger = "0.11.6"
 

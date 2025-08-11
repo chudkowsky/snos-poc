@@ -1,9 +1,8 @@
-use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use starknet_api::block::{GasPrice, GasPrices};
 use starknet_api::contract_class::{ClassInfo, SierraVersion};
-use blockifier::transaction::account_transaction::{AccountTransaction, ExecutionFlags};
+use blockifier::transaction::account_transaction::AccountTransaction;
 use blockifier::transaction::errors::TransactionExecutionError;
 use rpc_client::RpcClient;
 use starknet::core::types::{
@@ -13,7 +12,7 @@ use starknet::core::types::{
     Transaction, TransactionTrace, TransactionTraceWithHash,
 };
 use starknet::providers::{Provider, ProviderError};
-use starknet_api::core::{calculate_contract_address, ContractAddress, PatriciaKey, ChainId};
+use starknet_api::core::{PatriciaKey, ChainId};
 use starknet_api::execution_resources::GasAmount;
 use starknet_api::transaction::{TransactionHash};
 use starknet_api::transaction::fields::{AllResourceBounds, Fee};
@@ -116,7 +115,7 @@ fn invoke_v1_to_blockifier(
     tx: &InvokeTransactionV1,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::InvokeTransaction::V1(starknet_api::transaction::InvokeTransactionV1 {
         max_fee: Fee(felt_to_u128(&tx.max_fee)?),
         signature: starknet_api::transaction::fields::TransactionSignature(Arc::new(tx.signature.to_vec())),
@@ -138,7 +137,7 @@ fn invoke_v3_to_blockifier(
     tx: &InvokeTransactionV3,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::InvokeTransaction::V3(starknet_api::transaction::InvokeTransactionV3 {
         resource_bounds: resource_bounds_core_to_api(&tx.resource_bounds),
         tip: starknet_api::transaction::fields::Tip(tx.tip),
@@ -204,7 +203,7 @@ async fn declare_v0_to_blockifier(
     block_number: u64,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::DeclareTransaction::V0(starknet_api::transaction::DeclareTransactionV0V1 {
         max_fee: starknet_api::transaction::fields::Fee(felt_to_u128(&tx.max_fee)?),
         signature: starknet_api::transaction::fields::TransactionSignature(Arc::new(tx.signature.clone())),
@@ -235,7 +234,7 @@ async fn declare_v1_to_blockifier(
     block_number: u64,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::DeclareTransaction::V1(starknet_api::transaction::DeclareTransactionV0V1 {
         max_fee: starknet_api::transaction::fields::Fee(felt_to_u128(&tx.max_fee)?),
         signature: starknet_api::transaction::fields::TransactionSignature(Arc::new(tx.signature.clone())),
@@ -264,7 +263,7 @@ async fn declare_v2_to_blockifier(
     block_number: u64,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::DeclareTransaction::V2(starknet_api::transaction::DeclareTransactionV2 {
         max_fee: starknet_api::transaction::fields::Fee(felt_to_u128(&tx.max_fee)?),
         signature: starknet_api::transaction::fields::TransactionSignature(Arc::new(tx.signature.clone())),
@@ -294,7 +293,7 @@ async fn declare_v3_to_blockifier(
     block_number: u64,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::DeclareTransaction::V3(starknet_api::transaction::DeclareTransactionV3 {
         resource_bounds: resource_bounds_core_to_api(&tx.resource_bounds),
         tip: starknet_api::transaction::fields::Tip(tx.tip),
@@ -328,7 +327,7 @@ fn l1_handler_to_blockifier(
     gas_prices: &GasPrices,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::L1HandlerTransaction {
         version: starknet_api::transaction::TransactionVersion(tx.version),
         nonce: starknet_api::core::Nonce(Felt::from(tx.nonce)),
@@ -373,24 +372,12 @@ fn l1_handler_to_blockifier(
     })
 }
 
-/// Calculates a contract address for deploy transaction
-fn recalculate_contract_address(
-    api_tx: &starknet_api::transaction::DeployAccountTransaction,
-) -> Result<ContractAddress, StarknetApiError> {
-    calculate_contract_address(
-        api_tx.contract_address_salt(),
-        api_tx.class_hash(),
-        &api_tx.constructor_calldata(),
-        // When the contract is deployed via a DEPLOY_ACCOUNT transaction: 0
-        ContractAddress::from(0_u8),
-    )
-}
 
 fn deploy_account_v1_to_blockifier(
     tx: &DeployAccountTransactionV1,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, ToBlockifierError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
 
     let (max_fee, signature, nonce, class_hash, constructor_calldata, contract_address_salt) = (
         Fee(felt_to_u128(&tx.max_fee)?),
@@ -431,7 +418,7 @@ fn deploy_account_v3_to_blockifier(
     tx: &DeployAccountTransactionV3,
     chain_id: ChainId
 ) -> Result<TransactionConversionResult, StarknetApiError> {
-    let tx_hash = TransactionHash(tx.transaction_hash);
+    let _tx_hash = TransactionHash(tx.transaction_hash);
     let api_tx = starknet_api::transaction::DeployAccountTransaction::V3(
         starknet_api::transaction::DeployAccountTransactionV3 {
             resource_bounds: resource_bounds_core_to_api(&tx.resource_bounds),

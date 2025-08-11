@@ -138,9 +138,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
-name = "apollo_compile_to_native"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+name = "apollo_compile_to_native_types"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "apollo_config",
  "serde",
@@ -149,8 +149,8 @@ dependencies = [
 
 [[package]]
 name = "apollo_config"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "apollo_infra_utils",
  "clap",
@@ -161,14 +161,16 @@ dependencies = [
  "strum_macros",
  "thiserror 1.0.69",
  "tracing",
+ "url",
  "validator",
 ]
 
 [[package]]
 name = "apollo_infra_utils"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
+ "apollo_proc_macros",
  "assert-json-diff",
  "colored",
  "num_enum",
@@ -183,14 +185,39 @@ dependencies = [
 
 [[package]]
 name = "apollo_metrics"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "indexmap 2.10.0",
  "metrics 0.24.2",
  "num-traits",
  "paste",
  "regex",
+]
+
+[[package]]
+name = "apollo_proc_macros"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
+dependencies = [
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "apollo_starknet_os_program"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
+dependencies = [
+ "apollo_infra_utils",
+ "cairo-vm",
+ "serde",
+ "serde_json",
+ "starknet-types-core",
+ "thiserror 1.0.69",
+ "tokio",
 ]
 
 [[package]]
@@ -667,6 +694,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "blake2s"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
+dependencies = [
+ "blake2",
+ "digest",
+ "starknet-types-core",
+]
+
+[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -677,11 +714,11 @@ dependencies = [
 
 [[package]]
 name = "blockifier"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "anyhow",
- "apollo_compile_to_native",
+ "apollo_compile_to_native_types",
  "apollo_config",
  "apollo_infra_utils",
  "apollo_metrics",
@@ -724,8 +761,8 @@ dependencies = [
 
 [[package]]
 name = "blockifier_test_utils"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "apollo_infra_utils",
  "cairo-lang-starknet-classes",
@@ -1879,6 +1916,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_filter"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "186e05a59d4c50738528153b83b0b0194d3a29507dfec16eccd4b342903397d0"
+dependencies = [
+ "log",
+ "regex",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13c863f0904021b108aa8b2f55046443e6b1ebde8fd4a15c399893aae4fa069f"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "env_filter",
+ "jiff",
+ "log",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2858,6 +2918,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 
 [[package]]
+name = "jiff"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be1f93b8b1eb69c77f24bbb0afdf66f54b632ee39af40ca21c4365a1d7347e49"
+dependencies = [
+ "jiff-static",
+ "log",
+ "portable-atomic 1.11.1",
+ "portable-atomic-util",
+ "serde",
+]
+
+[[package]]
+name = "jiff-static"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03343451ff899767262ec32146f6d559dd759fdadf42ff0e227c7c48f72594b4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "js-sys"
 version = "0.3.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3391,8 +3475,8 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "papyrus_common"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "cairo-lang-starknet-classes",
  "indexmap 2.10.0",
@@ -4628,8 +4712,8 @@ dependencies = [
 
 [[package]]
 name = "shared_execution_objects"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "blockifier",
  "serde",
@@ -4709,6 +4793,7 @@ dependencies = [
  "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "cairo-vm",
+ "env_logger",
  "log",
  "reqwest 0.11.27",
  "rpc-client",
@@ -4983,8 +5068,8 @@ dependencies = [
 
 [[package]]
 name = "starknet_api"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "apollo_infra_utils",
  "base64 0.13.1",
@@ -5013,19 +5098,21 @@ dependencies = [
  "strum",
  "strum_macros",
  "thiserror 1.0.69",
+ "time",
 ]
 
 [[package]]
 name = "starknet_os"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
- "apollo_infra_utils",
+ "apollo_starknet_os_program",
  "ark-bls12-381",
  "ark-ff 0.4.2",
  "ark-poly 0.4.2",
  "ark-secp256k1 0.4.0",
  "ark-secp256r1 0.4.0",
+ "blake2s",
  "blockifier",
  "c-kzg",
  "cairo-lang-casm",
@@ -5037,11 +5124,14 @@ dependencies = [
  "indoc",
  "log",
  "num-bigint",
+ "num-integer",
  "num-traits",
  "papyrus_common",
  "paste",
+ "regex",
  "serde",
  "serde_json",
+ "sha2",
  "sha3",
  "shared_execution_objects",
  "starknet-types-core",
@@ -5050,16 +5140,18 @@ dependencies = [
  "strum",
  "strum_macros",
  "thiserror 1.0.69",
+ "tracing",
 ]
 
 [[package]]
 name = "starknet_patricia"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "async-recursion",
  "derive_more",
  "ethnum",
+ "num-bigint",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -5074,8 +5166,8 @@ dependencies = [
 
 [[package]]
 name = "starknet_patricia_storage"
-version = "0.15.0-rc.1"
-source = "git+https://github.com/Mohiiit/sequencer?rev=65fc6e6c25bbf9a0ac466cb96e599a311eb1df41#65fc6e6c25bbf9a0ac466cb96e599a311eb1df41"
+version = "0.0.0"
+source = "git+https://github.com/Mohiiit/sequencer?rev=12ba10bff15991c3f0326dfc618a08d2754aecba#12ba10bff15991c3f0326dfc618a08d2754aecba"
 dependencies = [
  "hex",
  "serde",
@@ -5772,6 +5864,7 @@ dependencies = [
  "form_urlencoded",
  "idna 1.0.3",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]

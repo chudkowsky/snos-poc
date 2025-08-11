@@ -3,7 +3,6 @@ use cairo_vm::Felt252;
 use starknet::core::types::{BlockId, ExecuteInvocation, FunctionInvocation, MaybePendingStateUpdate, StarknetError, TransactionTrace, TransactionTraceWithHash, StateDiff};
 use starknet::core::utils::starknet_keccak;
 use starknet::providers::ProviderError;
-use starknet_api::StarknetApiError;
 use starknet_types_core::felt::Felt;
 use rpc_client::RpcClient;
 use starknet_os_types::casm_contract_class::GenericCasmContractClass;
@@ -13,9 +12,9 @@ use thiserror::Error;
 use starknet_os_types::sierra_contract_class::GenericSierraContractClass;
 use starknet::providers::Provider;
 use starknet::core::types::SierraEntryPoint;
+use starknet_api::hash::PoseidonHash;
 use starknet_crypto::poseidon_hash_many;
-use starknet_os::io::os_input::{CachedStateInput, CommitmentInfo, ContractClassComponentHashes as OsContractClassComponentHashes};
-use starknet_patricia::hash::hash_trait::HashOutput;
+use starknet_api::state::ContractClassComponentHashes as OsContractClassComponentHashes;
 
 
 /// Holds the hashes of the contract class components, to be used for calculating the final hash.
@@ -35,11 +34,11 @@ impl ContractClassComponentHashes {
     pub fn to_os_format(&self) -> OsContractClassComponentHashes {
         OsContractClassComponentHashes {
             contract_class_version: self.contract_class_version,
-            external_functions_hash: HashOutput(self.external_functions_hash),
-            l1_handlers_hash: HashOutput(self.l1_handlers_hash),
-            constructors_hash: HashOutput(self.constructors_hash),
-            abi_hash: HashOutput(self.abi_hash),
-            sierra_program_hash: HashOutput(self.sierra_program_hash),
+            external_functions_hash: PoseidonHash(self.external_functions_hash),
+            l1_handlers_hash: PoseidonHash(self.l1_handlers_hash),
+            constructors_hash: PoseidonHash(self.constructors_hash),
+            abi_hash: self.abi_hash,
+            sierra_program_hash: self.sierra_program_hash,
         }
     }
 }
@@ -321,6 +320,7 @@ fn add_compiled_class_to_os_input(
     if matches!(&compiled_class, GenericCompiledClass::Cairo0(_)) {
         log::warn!("Skipping deprecated class for ch_to_cch: 0x{:x}", class_hash);
     } else {
+        log::debug!("adding the to the mapping of class_hash_to_compiled_class_hash with ch: {:?} and cch {:?}", class_hash, compiled_class_hash);
         class_hash_to_compiled_class_hash.insert(class_hash, compiled_class_hash.into());
     }
 

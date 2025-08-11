@@ -14,7 +14,7 @@ pub(crate) async fn get_storage_proofs(
     block_number: u64,
     tx_execution_infos: &[TransactionExecutionInfo],
     old_block_number: Felt,
-) -> Result<HashMap<Felt, PathfinderProof>, ClientError> {
+) -> Result<(HashMap<Felt, PathfinderProof>, HashMap<ContractAddress, HashSet<StorageKey>>), ClientError> {
     let accessed_keys_by_address = {
         let mut keys = get_all_accessed_keys(tx_execution_infos);
         // We need to fetch the storage proof for the block hash contract
@@ -27,16 +27,16 @@ pub(crate) async fn get_storage_proofs(
     let mut storage_proofs = HashMap::new();
 
     log::info!("Contracts we're fetching proofs for:");
-    for (contract_address, storage_keys) in accessed_keys_by_address {
+    for (contract_address, storage_keys) in &accessed_keys_by_address {
         log::info!("    Fetching proof for {}", contract_address.to_string());
         let contract_address_felt = *contract_address.key();
         let storage_proof =
-            get_storage_proof_for_contract(client, contract_address, storage_keys.into_iter(), block_number).await?;
+            get_storage_proof_for_contract(client, *contract_address, storage_keys.clone().into_iter(), block_number).await?;
 
         storage_proofs.insert(contract_address_felt, storage_proof);
     }
 
-    Ok(storage_proofs)
+    Ok((storage_proofs, accessed_keys_by_address))
 }
 
 pub(crate) async fn get_class_proofs(
@@ -69,7 +69,7 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
     let mut storage_proof =
         fetch_storage_proof_for_contract(rpc_client, contract_address_felt, &keys, block_number).await?;
 
-    let contract_data = match &storage_proof.contract_data {
+    let _contract_data = match &storage_proof.contract_data {
         None => {
             return Ok(storage_proof);
         }
