@@ -6,7 +6,7 @@ use starknet_api::contract_address;
 use starknet_api::core::ContractAddress;
 use starknet_api::state::StorageKey;
 use starknet_types_core::felt::Felt;
-use rpc_client::pathfinder::proofs::{ContractData, PathfinderClassProof, PathfinderProof};
+use rpc_client::pathfinder::proofs::{ContractData, PathfinderClassProof, PathfinderProof, verify_storage_proof};
 use rpc_client::pathfinder::client::ClientError;
 use rpc_client::RpcClient;
 pub(crate) async fn get_storage_proofs(
@@ -26,9 +26,9 @@ pub(crate) async fn get_storage_proofs(
 
     let mut storage_proofs = HashMap::new();
 
-    log::info!("Contracts we're fetching proofs for:");
+    println!("Contracts we're fetching proofs for:");
     for (contract_address, storage_keys) in &accessed_keys_by_address {
-        log::info!("    Fetching proof for {}", contract_address.to_string());
+        println!("    Fetching proof for {}", contract_address.to_string());
         let contract_address_felt = *contract_address.key();
         let storage_proof =
             get_storage_proof_for_contract(client, *contract_address, storage_keys.clone().into_iter(), block_number).await?;
@@ -69,14 +69,13 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
     let mut storage_proof =
         fetch_storage_proof_for_contract(rpc_client, contract_address_felt, &keys, block_number).await?;
 
-    let _contract_data = match &storage_proof.contract_data {
+    let contract_data = match &storage_proof.contract_data {
         None => {
             return Ok(storage_proof);
         }
         Some(contract_data) => contract_data,
     };
-    // let additional_keys = verify_storage_proof(contract_data, &keys);
-    let additional_keys = vec![]; // TODO: we are not verifying stuff as of now
+    let additional_keys = verify_storage_proof(contract_data, &keys);
 
     // Fetch additional proofs required to fill gaps in the storage trie that could make
     // the OS crash otherwise.
@@ -118,6 +117,7 @@ async fn fetch_storage_proof_for_contract(
 
 fn merge_storage_proofs(proofs: Vec<PathfinderProof>) -> PathfinderProof {
     let class_commitment = proofs[0].class_commitment;
+    let contract_commitment = proofs[0].contract_commitment;
     let state_commitment = proofs[0].state_commitment;
     let contract_proof = proofs[0].contract_proof.clone();
 
@@ -137,7 +137,7 @@ fn merge_storage_proofs(proofs: Vec<PathfinderProof>) -> PathfinderProof {
         contract_data
     };
 
-    PathfinderProof { class_commitment, state_commitment, contract_proof, contract_data }
+    PathfinderProof { contract_commitment, class_commitment, state_commitment, contract_proof, contract_data }
 }
 
 /// Inserts additional keys for retrieving storage proof from the block hash contract (address 0x1).

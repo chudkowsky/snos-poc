@@ -15,7 +15,7 @@ pub async fn generate_cached_state_input(
     accessed_classes: &HashSet<ClassHash>,
     accessed_keys_by_address: &HashMap<ContractAddress, HashSet<StorageKey>>,
 ) -> Result<CachedStateInput, Box<dyn std::error::Error + Send + Sync>> {
-    log::debug!(" Generating cached state input...");
+    println!(" Generating cached state input...");
     
     let mut storage = HashMap::new();
     let mut address_to_class_hash = HashMap::new();
@@ -26,7 +26,7 @@ pub async fn generate_cached_state_input(
     let mut all_addresses: HashSet<ContractAddress> = accessed_addresses.clone();
     all_addresses.extend(accessed_keys_by_address.keys());
 
-    log::debug!(" Processing {} total addresses...", all_addresses.len());
+    println!(" Processing {} total addresses...", all_addresses.len());
 
     // 1. Fill storage using accessed keys
     for (contract_address, storage_keys) in accessed_keys_by_address {
@@ -47,7 +47,7 @@ pub async fn generate_cached_state_input(
         }
     }
 
-    log::info!(" Filled storage for {} contracts", storage.len());
+    println!(" Filled storage for {} contracts", storage.len());
 
     // 2. Get nonces for all addresses
     for contract_address in &all_addresses {
@@ -60,7 +60,7 @@ pub async fn generate_cached_state_input(
         address_to_nonce.insert(*contract_address, Nonce(nonce));
     }
 
-    log::info!(" Retrieved nonces for {} addresses", address_to_nonce.len());
+    println!(" Retrieved nonces for {} addresses", address_to_nonce.len());
 
     // 3. Get class hashes for all addresses
     let mut all_class_hashes: HashSet<ClassHash> = accessed_classes.clone();
@@ -82,7 +82,7 @@ pub async fn generate_cached_state_input(
         all_class_hashes.insert(class_hash);
     }
 
-    log::info!(" Retrieved class hashes for {} addresses", address_to_class_hash.len());
+    println!(" Retrieved class hashes for {} addresses", address_to_class_hash.len());
 
     // 4. Get compiled class hashes for all class hashes
     for class_hash in &all_class_hashes {
@@ -103,7 +103,7 @@ pub async fn generate_cached_state_input(
         class_hash_to_compiled_class_hash.insert(*class_hash, compiled_class_hash);
     }
 
-    log::info!(" Retrieved compiled class hashes for {} classes", class_hash_to_compiled_class_hash.len());
+    println!(" Retrieved compiled class hashes for {} classes", class_hash_to_compiled_class_hash.len());
 
     let cached_state_input = CachedStateInput {
         storage,
@@ -112,6 +112,6 @@ pub async fn generate_cached_state_input(
         class_hash_to_compiled_class_hash,
     };
 
-    log::info!(" Generated cached state input successfully!");
+    println!(" Generated cached state input successfully!");
     Ok(cached_state_input)
 } 

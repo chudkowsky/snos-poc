@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use starknet_types_core::felt::Felt;
 
 // Import proper types from the dependencies
-use rpc_client::pathfinder::proofs::{PathfinderClassProof, TrieNode};
+use rpc_client::pathfinder::proofs::{PathfinderClassProof, PedersenHash, PoseidonHash, ProofVerificationError, TrieNode};
 
 // Import CommitmentInfo from starknet_os
 use starknet_os::io::os_input::CommitmentInfo;
@@ -10,26 +10,13 @@ use starknet_os::io::os_input::CommitmentInfo;
 // Import hash types from starknet_patricia and starknet_types_core
 use starknet_patricia::hash::hash_trait::HashOutput;
 use starknet_patricia::patricia_merkle_tree::types::SubTreeHeight;
-use starknet_types_core::hash::{Pedersen, Poseidon, StarkHash};
+// use starknet_types_core::hash::{Pedersen, Poseidon, StarkHash};
 
 // Import the trait from rpc-client
 use rpc_client::SimpleHashFunction;
 
 /// Implementation for Pedersen hash
-pub struct PedersenHash;
-impl SimpleHashFunction for PedersenHash {
-    fn hash(left: &Felt, right: &Felt) -> Felt {
-        Pedersen::hash(left, right)
-    }
-}
 
-/// Implementation for Poseidon hash  
-pub struct PoseidonHash;
-impl SimpleHashFunction for PoseidonHash {
-    fn hash(left: &Felt, right: &Felt) -> Felt {
-        Poseidon::hash(left, right)
-    }
-}
 
 /// Port of the format_commitment_facts function from old snos
 /// 
@@ -63,14 +50,14 @@ where
                     // For now, we'll create a simplified version
                     let path_felt = path.value;
                     let length_felt = Felt::from(path.len);
-                    let node_hash = H::hash(child, &path_felt);
-                    let fact_as_tuple = vec![*child, path_felt, length_felt];
+                    let node_hash = H::hash(&path_felt, child);
+                    let fact_as_tuple = vec![length_felt, path_felt, *child];
                     
                     (node_hash, fact_as_tuple)
                 }
             };
 
-            facts.insert(key, fact_as_tuple);
+            facts.insert(key.into(), fact_as_tuple);
         }
     }
 
@@ -91,7 +78,7 @@ pub fn compute_class_commitment(
     // TODO: Verify previous class proofs - need to find the correct verify method
     // For now, we'll skip verification to get the code compiling
     // Original code used: previous_class_proof.verify(*class_hash)
-    /*
+
     for (class_hash, previous_class_proof) in previous_class_proofs {
         if let Err(e) = previous_class_proof.verify(*class_hash) {
             match e {
@@ -110,7 +97,7 @@ pub fn compute_class_commitment(
             }
         }
     }
-    */
+
 
     // Extract class proof vectors
     let previous_class_proofs: Vec<_> = previous_class_proofs.values().cloned().collect();
@@ -127,8 +114,8 @@ pub fn compute_class_commitment(
     let class_commitment_facts: HashMap<_, _> =
         previous_class_commitment_facts.into_iter().chain(current_class_commitment_facts).collect();
 
-    log::debug!("previous class trie root: {}", previous_root.to_hex_string());
-    log::debug!("current class trie root: {}", updated_root.to_hex_string());
+    println!("previous class trie root: {}", previous_root.to_hex_string());
+    println!("current class trie root: {}", updated_root.to_hex_string());
 
     // Create CommitmentInfo with proper type conversions
     CommitmentInfo { 

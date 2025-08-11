@@ -12,11 +12,11 @@ edition = "2021"
 [workspace.dependencies]
 # building on top of the commit: 6f89c526c4478c98c22082065a6a3e5eecd0443b on the main sequencer repo
 # https://github.com/starkware-libs/sequencer
-blockifier = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
-starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
-starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
-starknet_patricia = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
-shared_execution_objects = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba"}
+blockifier = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/blockifier", features = ["testing"]}
+starknet_api = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/starknet_api", features = ["testing"]}
+starknet_os = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/starknet_os", features = ["testing"]}
+starknet_patricia = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/starknet_patricia", features = ["testing"]}
+shared_execution_objects = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/shared_execution_objects"}
 
 cairo-lang-starknet = { version = "=2.12.0-dev.1" }
 cairo-lang-starknet-classes = { version = "=2.12.0-dev.1" }

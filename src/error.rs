@@ -6,4 +6,4 @@ pub enum FeltConversionError {
     OverflowError,
     #[error("{0}")]
     CustomError(String),
-} 
+}
