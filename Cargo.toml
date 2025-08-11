@@ -10,8 +10,8 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
-# build on top of: 60d083a9fe2e455cfa3190bf1e8b4420d1fb6a40 commit 
-# build on top of: v0.15.0-rc.1
+# building on top of the commit: 6f89c526c4478c98c22082065a6a3e5eecd0443b on the main sequencer repo
+# https://github.com/starkware-libs/sequencer
 blockifier = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
 starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
 starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev = "12ba10bff15991c3f0326dfc618a08d2754aecba", features = ["testing"]}
