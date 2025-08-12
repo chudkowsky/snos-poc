@@ -16,62 +16,17 @@ use starknet_patricia::hash::hash_trait::HashOutput;
 use starknet_patricia::patricia_merkle_tree::types::SubTreeHeight;
 use starknet_types_core::felt::Felt;
 use cairo_vm::Felt252;
-use rpc_client::pathfinder::proofs::{PathfinderProof, PedersenHash, PoseidonHash};
+use rpc_client::pathfinder::proofs::{PathfinderProof, PedersenHash};
 use rpc_client::RpcClient;
 use rpc_client::state_reader::AsyncRpcStateReader;
 
 use crate::api_to_blockifier_conversion::starknet_rs_to_blockifier;
-use crate::commitment_utils::{format_commitment_facts};
+use crate::commitment_utils::{compute_class_commitment, format_commitment_facts};
 use crate::context_builder::{build_block_context, chain_id_from_felt};
-use crate::rpc_utils::{get_class_proofs, get_storage_proofs};
+use crate::rpc_utils::{get_class_proofs, get_storage_proofs, get_accessed_keys_with_block_hash};
 use crate::state_update::{get_formatted_state_update, get_subcalled_contracts_from_tx_traces};
 
 pub const STORED_BLOCK_HASH_BUFFER: u64 = 10;
-
-fn compute_class_commitment(
-    previous_class_proofs: &HashMap<Felt, rpc_client::pathfinder::proofs::PathfinderClassProof>,
-    class_proofs: &HashMap<Felt, rpc_client::pathfinder::proofs::PathfinderClassProof>,
-    previous_root: Felt,
-    updated_root: Felt,
-) -> CommitmentInfo {
-    // TODO: verification is skipped for now, add it
-    // for (class_hash, previous_class_proof) in previous_class_proofs {
-    //     if let Err(e) = previous_class_proof.verify(*class_hash) {
-    //         match e {
-    //             ProofVerificationError::NonExistenceProof { .. } | ProofVerificationError::EmptyProof => {}
-    //             _ => panic!("Previous class proof verification failed"),
-    //         }
-    //     }
-    // }
-    //
-    // for (class_hash, class_proof) in class_proofs {
-    //     if let Err(e) = class_proof.verify(*class_hash) {
-    //         match e {
-    //             ProofVerificationError::NonExistenceProof { .. } => {}
-    //             _ => panic!("Current class proof verification failed"),
-    //         }
-    //     }
-    // }
-
-    let previous_class_proofs: Vec<_> = previous_class_proofs.values().cloned().collect();
-    let class_proofs: Vec<_> = class_proofs.values().cloned().collect();
-
-    let previous_class_proofs: Vec<_> = previous_class_proofs.into_iter().map(|proof| proof.class_proof).collect();
-    let class_proofs: Vec<_> = class_proofs.into_iter().map(|proof| proof.class_proof).collect();
-
-    let previous_class_commitment_facts = format_commitment_facts::<PoseidonHash>(&previous_class_proofs);
-    let current_class_commitment_facts = format_commitment_facts::<PoseidonHash>(&class_proofs);
-
-    let class_commitment_facts: HashMap<_, _> =
-        previous_class_commitment_facts.into_iter().chain(current_class_commitment_facts)
-        .map(|(k, v)| (HashOutput(k), v))
-        .collect();
-
-    println!("previous class trie root: {}", previous_root.to_hex_string());
-    println!("current class trie root: {}", updated_root.to_hex_string());
-
-    CommitmentInfo {  previous_root: HashOutput(previous_root), updated_root: HashOutput(updated_root), tree_height: SubTreeHeight(251), commitment_facts: class_commitment_facts }
-}
 
 pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient) -> (OsBlockInput, BTreeMap<CompiledClassHash, CasmContractClass>, BTreeMap<CompiledClassHash, ContractClass>, HashSet<ContractAddress>, HashSet<ClassHash>, HashMap<ContractAddress, HashSet<StorageKey>>, Option<BlockId>) {
     println!("Starting block info collection for block {}", block_number);
@@ -210,20 +165,25 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
         .map(|execution_info| execution_info.clone().into())
         .collect();
 
-    println!("  Step 11: Fetching storage proofs...");
-    let (storage_proofs, accessed_keys_by_address) = get_storage_proofs(&rpc_client, block_number, &txn_execution_infos, old_block_number)
+    println!("  Step 11: Getting accessed keys...");
+    let accessed_keys_by_address = get_accessed_keys_with_block_hash(&txn_execution_infos, old_block_number);
+    println!("Successfully Got accessed keys for {} contracts", accessed_keys_by_address.len());
+
+    println!("  Step 11b: Fetching storage proofs...");
+    let storage_proofs = get_storage_proofs(&rpc_client, block_number, &accessed_keys_by_address)
         .await
         .expect("Failed to fetch storage proofs");
     println!("Successfully Got {} storage proofs", storage_proofs.len());
 
     println!(" Step 12: Fetching previous storage proofs...");
-    let (previous_storage_proofs, _previous_accessed_keys_by_address) = match previous_block_id {
+    // TODO: add these keys to the accessed keys as well
+    let previous_storage_proofs = match previous_block_id {
         Some(BlockId::Number(previous_block_id)) => {
-            get_storage_proofs(&rpc_client, previous_block_id, &txn_execution_infos, old_block_number)
+            get_storage_proofs(&rpc_client, previous_block_id, &accessed_keys_by_address)
                 .await
                 .expect("Failed to fetch storage proofs")
         }
-        None => get_storage_proofs(&rpc_client, 0, &txn_execution_infos, old_block_number)
+        None => get_storage_proofs(&rpc_client, 0, &accessed_keys_by_address)
             .await
             .expect("Failed to fetch storage proofs"),
         _ => {
@@ -239,7 +199,7 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
                     contract_data: None,
                 },
             );
-            (map, HashMap::new())
+            map
         }
     };
     println!("Successfully Got {} previous storage proofs", previous_storage_proofs.len());
@@ -252,8 +212,8 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
         let contract_address: Felt  = contract_address;
         let previous_storage_proof =
             previous_storage_proofs.get(&contract_address).expect("failed to find previous storage proof");
-        let previous_contract_commitment_facts = format_commitment_facts::<PedersenHash>(&vec![previous_storage_proof.contract_proof.clone()]);
-        let current_contract_commitment_facts = format_commitment_facts::<PedersenHash>(&vec![storage_proof.contract_proof.clone()]);
+        let previous_contract_commitment_facts = format_commitment_facts::<PedersenHash>(&previous_storage_proof.clone().contract_data.unwrap().storage_proofs);
+        let current_contract_commitment_facts = format_commitment_facts::<PedersenHash>(&storage_proof.clone().contract_data.unwrap().storage_proofs);
         println!("contract_address: {:?}, previous storage proof is: {:?}", contract_address, previous_contract_commitment_facts);
         println!("contract_address: {:?}, current storage proof is: {:?}", contract_address, current_contract_commitment_facts);
         let global_contract_commitment_facts: HashMap<HashOutput, Vec<Felt252>> =
@@ -263,6 +223,7 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
                 .map(|(key, value)| (HashOutput(key.into()), value))
                 .collect();
 
+        println!("the global contract commitment facts turns out to be: {:?}", global_contract_commitment_facts);
         let previous_contract_storage_root: Felt = previous_storage_proof
             .contract_data
             .as_ref()
@@ -287,9 +248,9 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
         address_to_storage_commitment_info.insert(ContractAddress::try_from(contract_address).unwrap(), contract_state_commitment_info);
 
         println!(
-            "Storage root 0x{:x} for contract 0x{:x}",
+            "Storage root 0x{:x} for contract 0x{:x} and same root in HashOutput would be: {:?}",
             Into::<Felt252>::into(previous_contract_storage_root),
-            contract_address
+            contract_address, HashOutput(previous_contract_storage_root)
         );
         println!("the contract address: {:?} and the block-id: {:?}", contract_address, block_id);
         

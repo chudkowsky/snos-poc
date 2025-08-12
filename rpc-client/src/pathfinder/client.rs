@@ -1,4 +1,6 @@
 use std::collections::VecDeque;
+use std::fs::File;
+use std::io::Write;
 
 use reqwest::{Response, StatusCode};
 use serde::de::DeserializeOwned;
@@ -135,7 +137,7 @@ impl PathfinderRpcClient {
         )
             .await?;
 
-        Ok(official_proof_to_pathfinder_proof(response))
+        Ok(official_proof_to_pathfinder_proof(response, block_number, contract_address, &key))
     }
 
     pub async fn get_class_proof(
@@ -157,7 +159,19 @@ impl PathfinderRpcClient {
     }
 }
 
-pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse) -> PathfinderProof {
+fn write_proof_to_json(proof: &GetStorageProofResponse, block_number: u64, contract_address: Felt, keys: &[Felt]) -> std::io::Result<()> {
+    let json_string = serde_json::to_string_pretty(proof)?;
+    let mut file = File::create(format!("storage_proof_response_{}_{}_{}.json", block_number, contract_address.to_hex_string(), keys.iter().map(|k| k.to_hex_string()).collect::<Vec<String>>().join("_")))?;
+    file.write_all(json_string.as_bytes())?;
+    println!("✅ Storage proof written to storage_proof_response.json");
+    Ok(())
+}
+
+pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse, block_number: u64,
+    contract_address: Felt,
+    keys: &[Felt],) -> PathfinderProof {
+    write_proof_to_json(&proof, block_number, contract_address, keys).unwrap();
+    // panic!("temp");
     let contract_proof = proof.contracts_proof;
     let contract_leaf = contract_proof.contract_leaves_data.first().expect("must have exactly one");
     let storage_proofs = proof.contracts_storage_proofs.nodes.first().expect("must have exactly one");
@@ -174,8 +188,14 @@ pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse)
     let mut pf_storage_proof: Vec<TrieNode> = Vec::with_capacity(pf_storage_proofs.len());
 
     for n in &storage_proofs.0 {
-        let NodeWithHash { node, .. } = n;
-        pf_storage_proof.push(node.clone().into());
+        let NodeWithHash { node, node_hash } = n;
+        let mut trie_node: TrieNode = node.clone().into();
+        // Set the node_hash from the NodeWithHash
+        match &mut trie_node {
+            TrieNode::Binary { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+            TrieNode::Edge { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+        }
+        pf_storage_proof.push(trie_node);
     }
 
     pf_storage_proofs.push(pf_storage_proof);
@@ -183,8 +203,14 @@ pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse)
     // convert contract proofs to pathfinder types
     let mut pf_contract_proof: Vec<TrieNode> = Vec::with_capacity(contract_proof.nodes.len());
     for n in &contract_proof.nodes.0 {
-        let NodeWithHash { node, .. } = n;
-        pf_contract_proof.push(node.clone().into());
+        let NodeWithHash { node, node_hash } = n;
+        let mut trie_node: TrieNode = node.clone().into();
+        // Set the node_hash from the NodeWithHash
+        match &mut trie_node {
+            TrieNode::Binary { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+            TrieNode::Edge { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+        }
+        pf_contract_proof.push(trie_node);
     }
 
     PathfinderProof {
@@ -197,7 +223,16 @@ pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse)
 }
 
 pub(crate) fn official_proof_to_pathfinder_class_proof(proof: GetStorageProofResponse) -> PathfinderClassProof {
-    let class_proof = proof.classes_proof.nodes.iter().map(|node| TrieNode::from(node.node.clone())).collect();
+    let class_proof = proof.classes_proof.nodes.iter().map(|node_with_hash| {
+        let NodeWithHash { node, node_hash } = node_with_hash;
+        let mut trie_node: TrieNode = node.clone().into();
+        // Set the node_hash from the NodeWithHash
+        match &mut trie_node {
+            TrieNode::Binary { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+            TrieNode::Edge { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+        }
+        trie_node
+    }).collect();
     let class_commitment = proof.global_roots.classes_tree_root;
     PathfinderClassProof { class_commitment, class_proof }
 }
@@ -205,11 +240,16 @@ pub(crate) fn official_proof_to_pathfinder_class_proof(proof: GetStorageProofRes
 impl From<MerkleNode> for TrieNode {
     fn from(node: MerkleNode) -> Self {
         match node {
-            MerkleNode::Edge { path, length, child } => super::proofs::TrieNode::Edge {
+            MerkleNode::Edge { path, length, child, node_hash } => super::proofs::TrieNode::Edge {
                 path: super::proofs::EdgePath { value: path, len: length as u64 },
                 child,
+                node_hash,
             },
-            MerkleNode::Binary { left, right } => super::proofs::TrieNode::Binary { left, right },
+            MerkleNode::Binary { left, right, node_hash } => super::proofs::TrieNode::Binary { 
+                left, 
+                right, 
+                node_hash 
+            },
         }
     }
 }

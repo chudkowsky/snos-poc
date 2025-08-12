@@ -35,6 +35,9 @@ pub enum MerkleNode {
         length: u8,
         /// The hash of the unique non-zero maximal-height descendant node.
         child: Felt,
+        /// The hash of this node
+        #[serde(skip_serializing_if = "Option::is_none")]
+        node_hash: Option<Felt>,
     },
 
     /// An internal node whose both children are non-zero.
@@ -43,6 +46,9 @@ pub enum MerkleNode {
         left: Felt,
         /// The hash of the right child.
         right: Felt,
+        /// The hash of this node
+        #[serde(skip_serializing_if = "Option::is_none")]
+        node_hash: Option<Felt>,
     },
 }
 

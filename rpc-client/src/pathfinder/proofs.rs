@@ -27,25 +27,42 @@ pub struct EdgePath {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum TrieNode {
     #[serde(rename = "binary")]
-    Binary { left: Felt, right: Felt },
+    Binary { 
+        left: Felt, 
+        right: Felt,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        node_hash: Option<Felt>,
+    },
     #[serde(rename = "edge")]
-    Edge { child: Felt, path: EdgePath },
+    Edge { 
+        child: Felt, 
+        path: EdgePath,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        node_hash: Option<Felt>,
+    },
 }
 
 // TODO: the hashing is not right here, solve this before proceeding
 impl TrieNode {
     pub fn hash<H: SimpleHashFunction>(&self) -> Hash {
         match self {
-            TrieNode::Binary { left, right } => {
+            TrieNode::Binary { left, right, node_hash: _ } => {
                 H::hash(left, right)
             }
-            TrieNode::Edge { child, path } => {
+            TrieNode::Edge { child, path, node_hash: _ } => {
                 // For edge nodes, we hash the child with the path value
                 // This is a simplified implementation
                 let bottom_path_hash = H::hash(child, &path.value);
                 let hash_value = Felt252::from_bytes_be_slice(&bottom_path_hash) + path.len;
                 Hash::from_bytes_be(hash_value.to_bytes_le())
             }
+        }
+    }
+
+    pub fn node_hash(&self) -> Option<Felt> {
+        match self {
+            TrieNode::Binary { node_hash, .. } => *node_hash,
+            TrieNode::Edge { node_hash, .. } => *node_hash,
         }
     }
 }
@@ -140,7 +157,7 @@ pub fn verify_storage_proof(contract_data: &ContractData, keys: &[Felt]) -> Vec<
         for error in errors {
             match error {
                 ProofVerificationError::NonExistenceProof { key, height, proof } => {
-                    if let Some(TrieNode::Edge { child: _, path }) = proof.last() {
+                    if let Some(TrieNode::Edge { child: _, path, .. }) = proof.last() {
                         if height.0 < DEFAULT_STORAGE_TREE_HEIGHT {
                             let modified_key = get_key_following_edge(key, height, path);
                             log::trace!(
@@ -226,17 +243,18 @@ pub fn verify_proof<H: SimpleHashFunction>(
     let mut index = start;
 
     for node in proof.iter() {
+        println!("the node here is: {:?}", node);
         let node_hash = Felt::from(node.hash::<H>());
         if node_hash != parent_hash {
             return Err(ProofVerificationError::InvalidChildNodeHash { node_hash, parent_hash });
         }
 
         match node {
-            TrieNode::Binary { left, right } => {
+            TrieNode::Binary { left, right, .. } => {
                 parent_hash = if bits[index as usize] { *right } else { *left };
                 index += 1;
             }
-            TrieNode::Edge { child, path } => {
+            TrieNode::Edge { child, path, .. } => {
                 let path_len_usize: usize = path.len.try_into().map_err(|_| ProofVerificationError::ConversionError)?;
                 let index_usize: usize = index.try_into().map_err(|_| ProofVerificationError::ConversionError)?;
 
