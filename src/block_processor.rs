@@ -27,6 +27,96 @@ use crate::rpc_utils::{get_class_proofs, get_storage_proofs, get_accessed_keys_w
 use crate::state_update::{get_formatted_state_update, get_subcalled_contracts_from_tx_traces};
 
 pub const STORED_BLOCK_HASH_BUFFER: u64 = 10;
+const STATEFUL_MAPPING_START: Felt = Felt::from_hex_unchecked("0x80"); // 128
+
+/// Helper function to populate accessed_keys_by_address with special address 0x2
+/// based on accessed addresses, classes, and current storage mapping.
+/// 
+/// According to the storage mapping rules:
+/// - Storage keys that require at most 127 bits and addresses of system contracts (0x1 and 0x2) 
+///   are not mapped and continue to be referred to directly
+/// - We ignore values < 128 and address 0x1
+/// - Keys are added to address 0x2 from contracts, classes, and existing storage keys
+fn populate_alias_contract_keys(
+    accessed_addresses: &HashSet<ContractAddress>,
+    accessed_classes: &HashSet<ClassHash>, 
+    accessed_keys_by_address: &mut HashMap<ContractAddress, HashSet<StorageKey>>,
+) {
+    // Special address 0x2 for alias contract
+    let alias_contract_address = ContractAddress::try_from(Felt::TWO)
+        .expect("0x2 should be a valid contract address");
+    
+    let mut alias_keys = HashSet::new();
+    
+
+    
+    // Process accessed contract addresses
+    for contract_address in accessed_addresses {
+        let address_felt: Felt = (*contract_address).into();
+        
+        // Skip address 0x1 (system contract)
+        if address_felt == Felt::ONE || address_felt == Felt::TWO {
+            continue;
+        }   
+        
+        // Only add if value >= 128 (requires stateful mapping)
+        if address_felt >= STATEFUL_MAPPING_START {
+            if let Ok(storage_key) = StorageKey::try_from(address_felt) {
+                alias_keys.insert(storage_key);
+            }
+        }
+    }
+    
+    // Process accessed class hashes
+    for class_hash in accessed_classes {
+        let class_hash_felt: Felt = class_hash.0;
+        
+        // Skip if it's address 0x1
+        if class_hash_felt == Felt::ONE {
+            continue;
+        }
+        
+        // Only add if value >= 128 (requires stateful mapping)
+        if class_hash_felt >= STATEFUL_MAPPING_START {
+            if let Ok(storage_key) = StorageKey::try_from(class_hash_felt) {
+                alias_keys.insert(storage_key);
+            }
+        }
+    }
+    
+    // Process existing storage keys from all contracts
+    for (contract_addr, storage_keys) in accessed_keys_by_address.iter() {
+        for storage_key in storage_keys {
+            let contract_felt: Felt = (*(contract_addr)).into();
+            
+            // Skip if it's address 0x1
+            if contract_felt == Felt::ONE || contract_felt == Felt::TWO {
+                continue;
+            }
+
+            let key_felt: Felt = (*storage_key).into();
+            
+            // Only add if value >= 128 (requires stateful mapping)
+            if key_felt >= STATEFUL_MAPPING_START {
+                alias_keys.insert(*storage_key);
+            }
+            if contract_felt >= STATEFUL_MAPPING_START {
+                alias_keys.insert(*storage_key);
+            }
+        }
+    }
+    
+    // Add all qualifying keys to the alias contract (address 0x2)
+    if !alias_keys.is_empty() {
+        accessed_keys_by_address
+            .entry(alias_contract_address)
+            .or_default()
+            .extend(alias_keys);
+        
+        println!("Added {} keys to alias contract (0x2) for storage mapping", 
+                accessed_keys_by_address.get(&alias_contract_address).unwrap().len());
+    }
+}
 
 pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient) -> (OsBlockInput, BTreeMap<CompiledClassHash, CasmContractClass>, BTreeMap<CompiledClassHash, ContractClass>, HashSet<ContractAddress>, HashSet<ClassHash>, HashMap<ContractAddress, HashSet<StorageKey>>, Option<BlockId>) {
     println!("Starting block info collection for block {}", block_number);
@@ -166,8 +256,11 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
         .collect();
 
     println!("  Step 11: Getting accessed keys...");
-    let accessed_keys_by_address = get_accessed_keys_with_block_hash(&txn_execution_infos, old_block_number);
+    let mut accessed_keys_by_address = get_accessed_keys_with_block_hash(&txn_execution_infos, old_block_number);
     println!("Successfully Got accessed keys for {} contracts", accessed_keys_by_address.len());
+
+    // Populate accessed_keys_by_address with special address 0x2 based on accessed addresses, classes, and storage mapping
+    populate_alias_contract_keys(&accessed_addresses, &accessed_classes, &mut accessed_keys_by_address);
 
     println!("  Step 11b: Fetching storage proofs...");
     let storage_proofs = get_storage_proofs(&rpc_client, block_number, &accessed_keys_by_address)
@@ -255,7 +348,7 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
         println!("the contract address: {:?} and the block-id: {:?}", contract_address, block_id);
         
         // TODO: Check this special case handling once again - why does contract address 0x1 need class hash 0x0?
-        let class_hash = if contract_address == Felt::ONE {
+        let class_hash = if contract_address == Felt::ONE || contract_address == Felt::TWO {
             println!("🔧 Special case: Contract address 0x1 detected, setting class hash to 0x0 without RPC call");
             Felt::ZERO
         } else {
