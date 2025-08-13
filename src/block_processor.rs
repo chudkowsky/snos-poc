@@ -307,8 +307,8 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
             previous_storage_proofs.get(&contract_address).expect("failed to find previous storage proof");
         let previous_contract_commitment_facts = format_commitment_facts::<PedersenHash>(&previous_storage_proof.clone().contract_data.unwrap().storage_proofs);
         let current_contract_commitment_facts = format_commitment_facts::<PedersenHash>(&storage_proof.clone().contract_data.unwrap().storage_proofs);
-        println!("contract_address: {:?}, previous storage proof is: {:?}", contract_address, previous_contract_commitment_facts);
-        println!("contract_address: {:?}, current storage proof is: {:?}", contract_address, current_contract_commitment_facts);
+        // println!("contract_address: {:?}, previous storage proof is: {:?}", contract_address, previous_contract_commitment_facts);
+        // println!("contract_address: {:?}, current storage proof is: {:?}", contract_address, current_contract_commitment_facts);
         let global_contract_commitment_facts: HashMap<HashOutput, Vec<Felt252>> =
             previous_contract_commitment_facts
                 .into_iter()
@@ -316,7 +316,7 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
                 .map(|(key, value)| (HashOutput(key.into()), value))
                 .collect();
 
-        println!("the global contract commitment facts turns out to be: {:?}", global_contract_commitment_facts);
+        // println!("the global contract commitment facts turns out to be: {:?}", global_contract_commitment_facts);
         let previous_contract_storage_root: Felt = previous_storage_proof
             .contract_data
             .as_ref()
@@ -358,7 +358,7 @@ pub async fn collect_single_block_info(block_number: u64, rpc_client: RpcClient)
         contract_address_to_class_hash.insert(contract_address, class_hash);
 
     }
-    println!("Successfully Processed {} contract storage commitments", address_to_storage_commitment_info.len());
+    // println!("Successfully Processed {} contract storage commitments", address_to_storage_commitment_info.len());
 
     let compiled_classes = processed_state_update.compiled_classes;
     let deprecated_compiled_classes = processed_state_update.deprecated_compiled_classes;

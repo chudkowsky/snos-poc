@@ -1,12 +1,14 @@
 use std::collections::{HashMap, HashSet};
+use std::fs;
 use blockifier::execution::call_info::CallInfo;
 use blockifier::transaction::objects::TransactionExecutionInfo;
 use cairo_vm::Felt252;
+use serde_json;
 use starknet_api::contract_address;
 use starknet_api::core::ContractAddress;
 use starknet_api::state::StorageKey;
 use starknet_types_core::felt::Felt;
-use rpc_client::pathfinder::proofs::{ContractData, PathfinderClassProof, PathfinderProof};
+use rpc_client::pathfinder::proofs::{ContractData, PathfinderClassProof, PathfinderProof, verify_storage_proof};
 use rpc_client::pathfinder::client::ClientError;
 use rpc_client::RpcClient;
 
@@ -38,6 +40,7 @@ pub(crate) fn get_comprehensive_access_info(
     let mut accessed_keys_by_address = get_all_accessed_keys(tx_execution_infos);
     // We need to fetch the storage proof for the block hash contract
     accessed_keys_by_address.entry(contract_address!("0x1")).or_default().insert(old_block_number.try_into().unwrap());
+    accessed_keys_by_address.entry(contract_address!("0x2")).or_default().insert(Felt::ZERO.try_into().unwrap());
     // Include extra keys for contracts that trigger get_block_hash_syscall
     insert_extra_storage_reads_keys(old_block_number, &mut accessed_keys_by_address);
 
@@ -177,7 +180,7 @@ pub(crate) async fn get_storage_proofs(
         let contract_address_felt = *contract_address.key();
         let storage_proof =
             get_storage_proof_for_contract(client, *contract_address, storage_keys.clone().into_iter(), block_number).await?;
-        println!("storage proof for the address: {:?} is: {:?}", contract_address, storage_proof);
+        // println!("storage proof for the address: {:?} is: {:?}", contract_address, storage_proof);
         storage_proofs.insert(contract_address_felt, storage_proof);
     }
 
@@ -199,6 +202,13 @@ pub(crate) async fn get_class_proofs(
     Ok(proofs)
 }
 
+/// Helper function to write storage proof to a JSON file
+fn write_storage_proof_to_file(storage_proof: &PathfinderProof, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let json_content = serde_json::to_string_pretty(storage_proof)?;
+    fs::write(filename, json_content)?;
+    Ok(())
+}
+
 /// Fetches the storage proof for the specified contract and storage keys.
 /// This function can fetch additional keys if required to fill gaps in the storage trie
 /// that must be filled to get the OS to function. See `get_key_following_edge` for more details.
@@ -214,22 +224,36 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
     let mut storage_proof =
         fetch_storage_proof_for_contract(rpc_client, contract_address_felt, &keys, block_number).await?;
 
-    let _contract_data = match &storage_proof.contract_data {
+    // Write the storage proof to a file
+
+
+    let contract_data = match &storage_proof.contract_data {
         None => {
             return Ok(storage_proof);
         }
         Some(contract_data) => contract_data,
     };
+
+    // log::debug!("the keys here are: {:?}", keys);
+    // log::debug!("the contract data here is: {:?}", contract_data);
     // let additional_keys = verify_storage_proof(contract_data, &keys);
     let additional_keys = vec![];
 
     // Fetch additional proofs required to fill gaps in the storage trie that could make
     // the OS crash otherwise.
     if !additional_keys.is_empty() {
+        println!("non empty additional_keys now: {:?}", additional_keys);
         let additional_proof =
             fetch_storage_proof_for_contract(rpc_client, contract_address_felt, &additional_keys, block_number).await?;
 
         storage_proof = merge_storage_proofs(vec![storage_proof, additional_proof]);
+    }
+    // let _ = verify_storage_proof(contract_data, &keys);
+    let filename = format!("pathfinder_proof_{}_{:x}.json", block_number, contract_address_felt);
+    if let Err(e) = write_storage_proof_to_file(&storage_proof, &filename) {
+        log::warn!("Failed to write storage proof to file {}: {}", filename, e);
+    } else {
+        log::info!("Storage proof written to file: {}", filename);
     }
 
     Ok(storage_proof)

@@ -11,5 +11,5 @@ use starknet_os_types::hash::Hash;
 
 /// Simplified hash function trait for our use case
 pub trait SimpleHashFunction {
-    fn hash(left: &Felt, right: &Felt) -> Hash;
+    fn hash(left: &Felt, right: &Felt) -> Felt;
 }

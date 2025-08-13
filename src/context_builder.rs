@@ -1,11 +1,13 @@
 use starknet::core::types::{L1DataAvailabilityMode, BlockWithTxs};
 use starknet_api::core::ChainId;
-use starknet_api::block::{BlockInfo, BlockNumber, BlockTimestamp, GasPrices, GasPriceVector, StarknetVersion};
+use starknet_api::block::{BlockInfo, BlockNumber, BlockTimestamp, GasPrice, GasPrices, GasPriceVector, NonzeroGasPrice, StarknetVersion};
 use starknet_api::{contract_address};
 use blockifier::context::{BlockContext, ChainInfo, FeeTokenAddresses};
 use blockifier::blockifier_versioned_constants::VersionedConstants;
 use blockifier::bouncer::BouncerConfig;
+use starknet_api::test_utils::{DEFAULT_ETH_L1_DATA_GAS_PRICE, DEFAULT_ETH_L2_GAS_PRICE};
 use starknet_types_core::felt::Felt;
+use crate::api_to_blockifier_conversion::felt_to_u128;
 use crate::error::FeltConversionError;
 
 pub fn chain_id_from_felt(felt: Felt) -> ChainId {
@@ -36,11 +38,21 @@ pub fn build_block_context(
             // strk_l1_gas_price: felt_to_gas_price(&block.l1_gas_price.price_in_fri)?,
             // eth_l1_data_gas_price: felt_to_gas_price(&block.l1_data_gas_price.price_in_wei)?,
             // strk_l1_data_gas_price: felt_to_gas_price(&block.l1_data_gas_price.price_in_fri)?,
-            eth_gas_prices: GasPriceVector::default(), //TODO: update the gas prices for the right block info
-            strk_gas_prices: GasPriceVector::default()
+            eth_gas_prices: GasPriceVector {
+                l1_gas_price: NonzeroGasPrice::new(GasPrice(felt_to_u128(&block.l1_gas_price.price_in_wei).unwrap())).unwrap(),
+                l1_data_gas_price: NonzeroGasPrice::new(GasPrice(felt_to_u128(&block.l1_data_gas_price.price_in_wei).unwrap())).unwrap(),
+                l2_gas_price: NonzeroGasPrice::new(GasPrice(felt_to_u128(&Felt::from_hex("0x199fe").unwrap()).unwrap())).unwrap(),
+            }, //TODO: update the gas prices for the right block info
+            strk_gas_prices: GasPriceVector {
+                l1_gas_price: NonzeroGasPrice::new(GasPrice(felt_to_u128(&block.l1_gas_price.price_in_fri).unwrap())).unwrap(),
+                l1_data_gas_price: NonzeroGasPrice::new(GasPrice(felt_to_u128(&block.l1_data_gas_price.price_in_fri).unwrap())).unwrap(),
+                l2_gas_price: NonzeroGasPrice::new(GasPrice(felt_to_u128(&Felt::from_hex("0xb2d05e00").unwrap()).unwrap())).unwrap(),
+            }
         },
         use_kzg_da,
     };
+
+    println!(">>>>>>>>> printing the block info for the context and for matching the information: {:?}", block_info);
 
     let chain_info = ChainInfo {
         chain_id,

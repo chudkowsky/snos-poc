@@ -23,5 +23,8 @@ tokio = {workspace = true}
 pathfinder-common = { workspace = true}
 pathfinder-serde = {workspace = true}
 num-bigint = {workspace = true}
+bitvec = { version = "1.0", default-features = false, features = ["std"] }
+
 [dev-dependencies]
 tokio-test = "0.4"
+rstest = "0.24.0"
