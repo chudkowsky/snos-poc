@@ -2,7 +2,8 @@
 members = [
     "crates/snos-core",
     "crates/rpc-client",
-    "crates/starknet-os-types"
+    "crates/starknet-os-types",
+    "crates/rpc-replay"
 ]
 resolver = "2"
 

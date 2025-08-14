@@ -183,7 +183,7 @@ fn write_proof_to_json(proof: &GetStorageProofResponse, block_number: u64, contr
 pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse, block_number: u64,
     contract_address: Felt,
     keys: &[Felt],) -> PathfinderProof {
-    write_proof_to_json(&proof, block_number, contract_address, keys).unwrap();
+    // write_proof_to_json(&proof, block_number, contract_address, keys).unwrap();
     // panic!("temp");
     let contract_proof = proof.contracts_proof;
     let contract_leaf = contract_proof.contract_leaves_data.first().expect("must have exactly one");

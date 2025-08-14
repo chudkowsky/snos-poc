@@ -1,0 +1,25 @@
+[package]
+name = "rpc-replay"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rpc-replay"
+path = "src/main.rs"
+
+[dependencies]
+# Internal dependencies
+snos-core = { path = "../snos-core" }
+rpc-client = { path = "../rpc-client" }
+
+# External dependencies
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.0", features = ["derive"] }
+env_logger = "0.11"
+log = "0.4"
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Starknet dependencies
+starknet = {workspace = true}
+starknet-types-core = {workspace = true}

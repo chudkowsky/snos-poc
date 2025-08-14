@@ -6,6 +6,7 @@ use starknet_os::{
     io::os_input::{OsChainInfo, OsHints, OsHintsConfig, StarknetOsInput},
     runner::run_os_stateless,
 };
+use starknet_os::io::os_output::StarknetOsRunnerOutput;
 use starknet_types_core::felt::Felt;
 use rpc_client::RpcClient;
 use rpc_client::state_reader::AsyncRpcStateReader;
@@ -70,9 +71,8 @@ pub struct PieGenerationInput {
 }
 
 /// Result containing the generated PIE and metadata
-#[derive(Debug)]
 pub struct PieGenerationResult {
-    pub pie_bytes: Vec<u8>,
+    pub output: StarknetOsRunnerOutput,
     pub blocks_processed: Vec<u64>,
     pub output_path: Option<String>,
 }
@@ -195,14 +195,10 @@ pub async fn generate_pie(input: PieGenerationInput) -> Result<PieGenerationResu
         let _ = output.cairo_pie.write_zip_file(Path::new(output_path), true);
     }
 
-    // For now, we'll return empty bytes since we don't have direct access to PIE bytes
-    // In the future, this could be improved to return the actual PIE data
-    let pie_bytes = Vec::new();
-
     log::info!("PIE generation completed successfully for blocks {:?}", input.blocks);
 
     Ok(PieGenerationResult {
-        pie_bytes,
+        output,
         blocks_processed: input.blocks.clone(),
         output_path: input.output_path.clone(),
     })

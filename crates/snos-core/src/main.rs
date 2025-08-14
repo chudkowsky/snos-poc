@@ -13,10 +13,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Build the input configuration
     let input = PieGenerationInput {
         rpc_url: "https://pathfinder-madara-ci.d.karnot.xyz".to_string(),
-        blocks: vec![1309254, 1309255, 1309256],
+        blocks: vec![1309259],
         chain_config: ChainConfig::default(), // Uses Sepolia defaults
         os_hints_config: OsHintsConfiguration::default(), // Uses sensible defaults
-        output_path: Some("cairo_pie_multi_blocks_1309254_1309256_stateless.zip".to_string()),
+        output_path: None,
     };
 
     println!("Configuration:");

@@ -72,7 +72,13 @@ pub(crate) fn get_comprehensive_access_info(
             );
         }
     }
-
+    
+    // Extend contract address 0x1 with values from accessed_blocks
+    let contract_0x1_keys = accessed_keys_by_address.entry(contract_address!("0x1")).or_default();
+    for block_number in &accessed_blocks {
+        contract_0x1_keys.insert((*block_number).try_into().unwrap());
+    }
+    
     BlockAccessInfo {
         accessed_keys_by_address,
         accessed_contract_addresses,
@@ -236,8 +242,7 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
 
     // log::debug!("the keys here are: {:?}", keys);
     // log::debug!("the contract data here is: {:?}", contract_data);
-    // let additional_keys = verify_storage_proof(contract_data, &keys);
-    let additional_keys = vec![];
+    let additional_keys = verify_storage_proof(contract_data, &keys);
 
     // Fetch additional proofs required to fill gaps in the storage trie that could make
     // the OS crash otherwise.
@@ -247,13 +252,6 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
             fetch_storage_proof_for_contract(rpc_client, contract_address_felt, &additional_keys, block_number).await?;
 
         storage_proof = merge_storage_proofs(vec![storage_proof, additional_proof]);
-    }
-    // let _ = verify_storage_proof(contract_data, &keys);
-    let filename = format!("pathfinder_proof_{}_{:x}.json", block_number, contract_address_felt);
-    if let Err(e) = write_storage_proof_to_file(&storage_proof, &filename) {
-        log::warn!("Failed to write storage proof to file {}: {}", filename, e);
-    } else {
-        log::info!("Storage proof written to file: {}", filename);
     }
 
     Ok(storage_proof)

@@ -160,7 +160,6 @@ impl ContractData {
 pub fn verify_storage_proof(contract_data: &ContractData, keys: &[Felt]) -> Vec<Felt> {
     let mut additional_keys = vec![];
     if let Err(errors) = contract_data.verify(keys) {
-        println!("got these many errors: {:?}", errors.len());
         for error in errors {
             match error {
                 ProofVerificationError::NonExistenceProof { key, height, node } => {
@@ -321,7 +320,6 @@ pub fn verify_proof<H: SimpleHashFunction>(
                     // 1. We correctly moved towards the target as far as possible, and
                     // 2. Hashing all the nodes along the path results in the root hash, which means
                     // 3. The target definitely does not exist in this tree
-                    println!("got the non existence proof error");
                     return Err(ProofVerificationError::NonExistenceProof {
                         key,
                         height: Height(DEFAULT_STORAGE_TREE_HEIGHT  - (index  - start) as u64),
