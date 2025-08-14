@@ -1,7 +1,8 @@
 [workspace]
 members = [
-    "rpc-client",
-    "starknet-os-types"
+    "crates/snos-core",
+    "crates/rpc-client",
+    "crates/starknet-os-types"
 ]
 resolver = "2"
 
@@ -45,38 +46,7 @@ starknet-crypto = "0.7.0"
 indoc = "2"
 rstest = "0.18.2"
 
-rpc-client = { path = "rpc-client" }
-starknet-os-types = {path = "starknet-os-types"}
-
-
-# Now we need to add a main package section
-[package]
-name = "snos-poc"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-rpc-client = {workspace = true}
-starknet-os-types = {workspace = true}
-blockifier = { workspace = true }
-starknet_api = { workspace = true }
-starknet_os = { workspace = true }
-starknet_patricia = { workspace = true }
-shared_execution_objects = {workspace = true}
-
-cairo-lang-starknet = { workspace = true }
-cairo-lang-starknet-classes = { workspace = true }
-cairo-lang-utils = { workspace = true }
-cairo-lang-casm = { workspace = true }
-cairo-vm = { workspace = true }
-starknet = { workspace = true }
-starknet-types-core = { workspace = true }
-starknet-crypto = { workspace = true}
-log = { workspace = true }
-reqwest = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-tokio = {workspace = true}
-env_logger = "0.11.6"
+snos-core = { path = "crates/snos-core" }
+rpc-client = { path = "crates/rpc-client" }
+starknet-os-types = { path = "crates/starknet-os-types" }
 

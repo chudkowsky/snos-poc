@@ -1,0 +1,39 @@
+[package]
+name = "snos-core"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "snos-poc"
+path = "src/main.rs"
+
+[dependencies]
+# Internal dependencies
+rpc-client = { path = "../rpc-client" }
+starknet-os-types = { path = "../starknet-os-types" }
+
+# Core dependencies
+blockifier = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/blockifier", features = ["testing"]}
+starknet_api = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/starknet_api", features = ["testing"]}
+starknet_os = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/starknet_os", features = ["testing"]}
+starknet_patricia = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/starknet_patricia", features = ["testing"]}
+shared_execution_objects = { path = "/Users/mohit/Desktop/karnot/sequencer/crates/shared_execution_objects"}
+
+cairo-lang-starknet = "=2.12.0-dev.1"
+cairo-lang-starknet-classes = "=2.12.0-dev.1"
+cairo-lang-utils = "=2.12.0-dev.1"
+cairo-lang-casm = "=2.12.0-dev.1"
+cairo-vm = "2.2.0"
+starknet = "0.16.0"
+starknet-types-core = "0.1.5"
+starknet-crypto = "0.7.0"
+log = "0.4.19"
+reqwest = { version = "0.11.18", features = ["blocking", "json"] }
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = { version = "1.0.105", features = ["arbitrary_precision"] }
+thiserror = "1.0.48"
+tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
+env_logger = "0.11.6"
+
+[dev-dependencies]
+rstest = "0.18.2" 
