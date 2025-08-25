@@ -403,10 +403,10 @@ mod tests {
         for index in 2..keys.len() {
             let key = Felt::from_hex(keys[index]).unwrap();
             let commitment = Felt::from_hex("0x113519a4e8c4b74d2295b850122523986c6e60902cfc31a623da2e765c76b3d").unwrap();
-            let json_file_path = "/Users/mohit/Desktop/karnot/snos-poc/pathfinder_proof_1309254_2.json";
+            let json_file_content = include_str!("../../../../resources/pathfinder_proof_1309254_2.json");
 
             // Read proof from JSON file - fail test if file cannot be read
-            let pathfinder_proof = read_pathfinder_proof_from_json(json_file_path)
+            let pathfinder_proof: PathfinderProof = serde_json::from_str(&json_file_content)
                 .expect("Failed to read PathfinderProof from JSON file");
 
             // Get contract data - fail test if not found

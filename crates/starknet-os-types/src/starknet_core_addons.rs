@@ -129,8 +129,7 @@ mod tests {
     use crate::starknet_core_addons::decompress_starknet_core_contract_class;
 
     const DEPRECATED_CLASS: &[u8] = include_bytes!(
-        "../../../tests/integration/contracts/blockifier_contracts/feature_contracts/cairo0/compiled/\
-         test_contract_compiled.json"
+        "../../../resources/test_contract_compiled.json"
     );
 
     #[test]
