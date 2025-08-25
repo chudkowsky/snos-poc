@@ -2,9 +2,7 @@ use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 
 // Import proper types from the dependencies
-use rpc_client::pathfinder::proofs::{
-    PathfinderClassProof, PedersenHash, PoseidonHash, ProofVerificationError, TrieNode,
-};
+use rpc_client::pathfinder::proofs::{PathfinderClassProof, PedersenHash, PoseidonHash, TrieNode};
 
 // Import CommitmentInfo from starknet_os
 use starknet_os::io::os_input::CommitmentInfo;

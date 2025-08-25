@@ -1,7 +1,7 @@
 use crate::api_to_blockifier_conversion::felt_to_u128;
 use crate::error::FeltConversionError;
 use blockifier::blockifier_versioned_constants::VersionedConstants;
-use blockifier::bouncer::{BouncerConfig, BouncerWeights, BuiltinWeights};
+use blockifier::bouncer::BouncerConfig;
 use blockifier::context::{BlockContext, ChainInfo, FeeTokenAddresses};
 use starknet::core::types::{BlockWithTxs, L1DataAvailabilityMode};
 use starknet_api::block::{
@@ -10,10 +10,7 @@ use starknet_api::block::{
 };
 use starknet_api::contract_address;
 use starknet_api::core::ChainId;
-use starknet_api::execution_resources::GasAmount;
-use starknet_api::test_utils::{DEFAULT_ETH_L1_DATA_GAS_PRICE, DEFAULT_ETH_L2_GAS_PRICE};
 use starknet_types_core::felt::Felt;
-use std::path::Path;
 
 pub fn chain_id_from_felt(felt: Felt) -> ChainId {
     // Skip leading zeroes

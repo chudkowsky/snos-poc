@@ -2,9 +2,7 @@ use blockifier::execution::call_info::CallInfo;
 use blockifier::transaction::objects::TransactionExecutionInfo;
 use cairo_vm::Felt252;
 use rpc_client::pathfinder::client::ClientError;
-use rpc_client::pathfinder::proofs::{
-    verify_storage_proof, ContractData, PathfinderClassProof, PathfinderProof,
-};
+use rpc_client::pathfinder::proofs::{ContractData, PathfinderClassProof, PathfinderProof};
 use rpc_client::RpcClient;
 use serde_json;
 use starknet_api::contract_address;

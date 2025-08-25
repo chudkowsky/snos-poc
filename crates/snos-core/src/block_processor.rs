@@ -15,15 +15,12 @@ use rpc_client::state_reader::AsyncRpcStateReader;
 use rpc_client::RpcClient;
 use serde::Serialize;
 use shared_execution_objects::central_objects::CentralTransactionExecutionInfo;
-use starknet::core::types::{
-    BlockId, MaybePendingBlockWithTxHashes, MaybePendingBlockWithTxs, TransactionTraceWithHash,
-};
+use starknet::core::types::{BlockId, MaybePendingBlockWithTxHashes, MaybePendingBlockWithTxs};
 use starknet::providers::Provider;
 use starknet_api::block::{BlockHash, BlockNumber, StarknetVersion};
-use starknet_api::core::{ClassHash, CompiledClassHash, ContractAddress};
+use starknet_api::core::{ClassHash, ContractAddress};
 use starknet_api::deprecated_contract_class::ContractClass;
 use starknet_api::state::StorageKey;
-use starknet_api::transaction::fields::Fee;
 use starknet_os::io::os_input::{CommitmentInfo, ContractClassComponentHashes, OsBlockInput};
 use starknet_patricia::hash::hash_trait::HashOutput;
 use starknet_patricia::patricia_merkle_tree::types::SubTreeHeight;

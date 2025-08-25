@@ -1,14 +1,6 @@
-use starknet::core::types::{BlockId, MaybePendingStateUpdate, TransactionTraceWithHash};
-use starknet::providers::Provider;
-use starknet_api::core::{ClassHash, CompiledClassHash, ContractAddress, Nonce};
-use starknet_api::state::StorageKey;
-use starknet_os::io::os_input::{CachedStateInput, OsBlockInput};
-use starknet_os_types::casm_contract_class::GenericCasmContractClass;
-use starknet_os_types::deprecated_compiled_class::GenericDeprecatedCompiledClass;
-use starknet_types_core::felt::Felt;
-use std::collections::{BTreeMap, HashMap};
-
-use rpc_client::RpcClient;
+use starknet::core::types::BlockId;
+use starknet_os::io::os_input::CachedStateInput;
+use std::collections::HashMap;
 
 /// Represents the previous BlockId for the current scope
 /// Defaults to None when the current BlockId is 0

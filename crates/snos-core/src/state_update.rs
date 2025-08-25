@@ -8,7 +8,6 @@ use starknet::core::types::{
 use starknet::core::utils::starknet_keccak;
 use starknet::providers::Provider;
 use starknet::providers::ProviderError;
-use starknet_api::hash::PoseidonHash;
 use starknet_crypto::poseidon_hash_many;
 use starknet_os::io::os_input::ContractClassComponentHashes as OsContractClassComponentHashes;
 use starknet_os_types::casm_contract_class::GenericCasmContractClass;

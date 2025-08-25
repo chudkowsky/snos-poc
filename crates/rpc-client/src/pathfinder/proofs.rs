@@ -18,8 +18,6 @@ pub const DEFAULT_STORAGE_TREE_HEIGHT: u64 = 251;
 #[derive(Debug, Copy, Clone, PartialEq, Default, Eq, Hash, Serialize, Deserialize)]
 pub struct Height(pub u64);
 use cairo_vm::Felt252;
-use starknet_os_types::hash::Hash;
-
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct EdgePath {
     pub len: u64,
