@@ -55,7 +55,9 @@ async fn handle_error<T: DeserializeOwned>(response: Response) -> Result<T, Clie
         StatusCode::OK => Ok(response.json().await?),
         s => {
             let error = response.text().await?;
-            Err(ClientError::CustomError(format!("Received response: {s:?} Error: {error}")))
+            Err(ClientError::CustomError(format!(
+                "Received response: {s:?} Error: {error}"
+            )))
         }
     }
 }
@@ -71,10 +73,14 @@ impl PathfinderRpcClient {
     pub fn new(base_url: &str) -> Self {
         let starknet_rpc_url = base_url.to_string();
         log::trace!("Starknet RPC URL: {}", starknet_rpc_url);
-        let http_client =
-            reqwest::ClientBuilder::new().build().unwrap_or_else(|e| panic!("Could not build reqwest client: {e}"));
+        let http_client = reqwest::ClientBuilder::new()
+            .build()
+            .unwrap_or_else(|e| panic!("Could not build reqwest client: {e}"));
 
-        Self { http_client, rpc_base_url: base_url.to_string() }
+        Self {
+            http_client,
+            rpc_base_url: base_url.to_string(),
+        }
     }
 
     pub async fn get_proof(
@@ -86,21 +92,30 @@ impl PathfinderRpcClient {
         let mut proofs = VecDeque::new();
 
         if keys.is_empty() {
-            let proof = self.get_proof_one_key(block_number, contract_address, None).await?;
+            let proof = self
+                .get_proof_one_key(block_number, contract_address, None)
+                .await?;
             proofs.push_back(proof);
         } else {
             for key in keys {
-                let proof = self.get_proof_one_key(block_number, contract_address, Some(*key)).await?;
+                let proof = self
+                    .get_proof_one_key(block_number, contract_address, Some(*key))
+                    .await?;
                 proofs.push_back(proof);
             }
         }
 
         // Merge all the proofs into a single proof
         let mut proof = proofs.pop_front().expect("must have at least one");
-        let contract_data = proof.contract_data.as_mut().expect("must have contract data");
+        let contract_data = proof
+            .contract_data
+            .as_mut()
+            .expect("must have contract data");
 
         for proof in proofs {
-            contract_data.storage_proofs.push(proof.contract_data.unwrap().storage_proofs[0].clone());
+            contract_data
+                .storage_proofs
+                .push(proof.contract_data.unwrap().storage_proofs[0].clone());
         }
 
         Ok(proof)
@@ -112,7 +127,11 @@ impl PathfinderRpcClient {
         contract_address: Felt,
         key: Option<Felt>,
     ) -> Result<PathfinderProof, ClientError> {
-        let key = if let Some(key) = key { vec![key] } else { Vec::new() };
+        let key = if let Some(key) = key {
+            vec![key]
+        } else {
+            Vec::new()
+        };
 
         let json = json!({
             "block_id": { "block_number": block_number },
@@ -136,9 +155,14 @@ impl PathfinderRpcClient {
             "starknet_getStorageProof",
             json,
         )
-            .await?;
+        .await?;
 
-        Ok(official_proof_to_pathfinder_proof(response, block_number, contract_address, &key))
+        Ok(official_proof_to_pathfinder_proof(
+            response,
+            block_number,
+            contract_address,
+            &key,
+        ))
     }
 
     pub async fn get_class_proof(
@@ -146,7 +170,11 @@ impl PathfinderRpcClient {
         block_number: u64,
         class_hash: &Felt,
     ) -> Result<PathfinderClassProof, ClientError> {
-        log::debug!("querying starknet_getStorageProofs for class {:x} at block {:x}", class_hash, block_number);
+        log::debug!(
+            "querying starknet_getStorageProofs for class {:x} at block {:x}",
+            class_hash,
+            block_number
+        );
 
         let response = post_jsonrpc_request::<GetStorageProofResponse>(
             &self.http_client,
@@ -154,40 +182,71 @@ impl PathfinderRpcClient {
             "starknet_getStorageProof",
             json!({ "block_id": { "block_number": block_number }, "class_hashes": [class_hash] }),
         )
-            .await?;
+        .await?;
 
         Ok(official_proof_to_pathfinder_class_proof(response))
     }
 }
 
-fn write_proof_to_json(proof: &GetStorageProofResponse, block_number: u64, contract_address: Felt, keys: &[Felt]) -> std::io::Result<()> {
+fn write_proof_to_json(
+    proof: &GetStorageProofResponse,
+    block_number: u64,
+    contract_address: Felt,
+    keys: &[Felt],
+) -> std::io::Result<()> {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    
+
     let json_string = serde_json::to_string_pretty(proof)?;
-    let keys_string = keys.iter().map(|k| k.to_hex_string()).collect::<Vec<String>>().join("_");
+    let keys_string = keys
+        .iter()
+        .map(|k| k.to_hex_string())
+        .collect::<Vec<String>>()
+        .join("_");
     let filename = if keys_string.is_empty() {
-        format!("storage_proof_response_{}_{}_{}_{}.json", block_number, contract_address.to_hex_string(), "no_keys", timestamp)
+        format!(
+            "storage_proof_response_{}_{}_{}_{}.json",
+            block_number,
+            contract_address.to_hex_string(),
+            "no_keys",
+            timestamp
+        )
     } else {
-        format!("storage_proof_response_{}_{}_{}__{}.json", block_number, contract_address.to_hex_string(), keys_string, timestamp)
+        format!(
+            "storage_proof_response_{}_{}_{}__{}.json",
+            block_number,
+            contract_address.to_hex_string(),
+            keys_string,
+            timestamp
+        )
     };
-    
+
     let mut file = File::create(filename)?;
     file.write_all(json_string.as_bytes())?;
     println!("✅ Storage proof written to storage_proof_response.json");
     Ok(())
 }
 
-pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse, block_number: u64,
+pub(crate) fn official_proof_to_pathfinder_proof(
+    proof: GetStorageProofResponse,
+    block_number: u64,
     contract_address: Felt,
-    keys: &[Felt],) -> PathfinderProof {
+    keys: &[Felt],
+) -> PathfinderProof {
     // write_proof_to_json(&proof, block_number, contract_address, keys).unwrap();
     // panic!("temp");
     let contract_proof = proof.contracts_proof;
-    let contract_leaf = contract_proof.contract_leaves_data.first().expect("must have exactly one");
-    let storage_proofs = proof.contracts_storage_proofs.nodes.first().expect("must have exactly one");
+    let contract_leaf = contract_proof
+        .contract_leaves_data
+        .first()
+        .expect("must have exactly one");
+    let storage_proofs = proof
+        .contracts_storage_proofs
+        .nodes
+        .first()
+        .expect("must have exactly one");
     // let contract_proof_root = proof.contracts_proof.contract_leaves_data
 
     let state_commitment = starknet_crypto::poseidon_hash_many(&[
@@ -205,8 +264,14 @@ pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse,
         let mut trie_node: TrieNode = node.clone().into();
         // Set the node_hash from the NodeWithHash
         match &mut trie_node {
-            TrieNode::Binary { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
-            TrieNode::Edge { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+            TrieNode::Binary {
+                node_hash: ref mut nh,
+                ..
+            } => *nh = Some(*node_hash),
+            TrieNode::Edge {
+                node_hash: ref mut nh,
+                ..
+            } => *nh = Some(*node_hash),
         }
         pf_storage_proof.push(trie_node);
     }
@@ -220,8 +285,14 @@ pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse,
         let mut trie_node: TrieNode = node.clone().into();
         // Set the node_hash from the NodeWithHash
         match &mut trie_node {
-            TrieNode::Binary { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
-            TrieNode::Edge { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
+            TrieNode::Binary {
+                node_hash: ref mut nh,
+                ..
+            } => *nh = Some(*node_hash),
+            TrieNode::Edge {
+                node_hash: ref mut nh,
+                ..
+            } => *nh = Some(*node_hash),
         }
         pf_contract_proof.push(trie_node);
     }
@@ -231,37 +302,68 @@ pub(crate) fn official_proof_to_pathfinder_proof(proof: GetStorageProofResponse,
         contract_commitment: proof.global_roots.contracts_tree_root,
         class_commitment: Some(proof.global_roots.classes_tree_root),
         contract_proof: pf_contract_proof,
-        contract_data: Some(ContractData { root: contract_leaf.storage_root, storage_proofs: pf_storage_proofs }),
+        contract_data: Some(ContractData {
+            root: contract_leaf.storage_root,
+            storage_proofs: pf_storage_proofs,
+        }),
     }
 }
 
-pub(crate) fn official_proof_to_pathfinder_class_proof(proof: GetStorageProofResponse) -> PathfinderClassProof {
-    let class_proof = proof.classes_proof.nodes.iter().map(|node_with_hash| {
-        let NodeWithHash { node, node_hash } = node_with_hash;
-        let mut trie_node: TrieNode = node.clone().into();
-        // Set the node_hash from the NodeWithHash
-        match &mut trie_node {
-            TrieNode::Binary { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
-            TrieNode::Edge { node_hash: ref mut nh, .. } => *nh = Some(*node_hash),
-        }
-        trie_node
-    }).collect();
+pub(crate) fn official_proof_to_pathfinder_class_proof(
+    proof: GetStorageProofResponse,
+) -> PathfinderClassProof {
+    let class_proof = proof
+        .classes_proof
+        .nodes
+        .iter()
+        .map(|node_with_hash| {
+            let NodeWithHash { node, node_hash } = node_with_hash;
+            let mut trie_node: TrieNode = node.clone().into();
+            // Set the node_hash from the NodeWithHash
+            match &mut trie_node {
+                TrieNode::Binary {
+                    node_hash: ref mut nh,
+                    ..
+                } => *nh = Some(*node_hash),
+                TrieNode::Edge {
+                    node_hash: ref mut nh,
+                    ..
+                } => *nh = Some(*node_hash),
+            }
+            trie_node
+        })
+        .collect();
     let class_commitment = proof.global_roots.classes_tree_root;
-    PathfinderClassProof { class_commitment, class_proof }
+    PathfinderClassProof {
+        class_commitment,
+        class_proof,
+    }
 }
 
 impl From<MerkleNode> for TrieNode {
     fn from(node: MerkleNode) -> Self {
         match node {
-            MerkleNode::Edge { path, length, child, node_hash } => super::proofs::TrieNode::Edge {
-                path: super::proofs::EdgePath { value: path, len: length as u64 },
+            MerkleNode::Edge {
+                path,
+                length,
+                child,
+                node_hash,
+            } => super::proofs::TrieNode::Edge {
+                path: super::proofs::EdgePath {
+                    value: path,
+                    len: length as u64,
+                },
                 child,
                 node_hash,
             },
-            MerkleNode::Binary { left, right, node_hash } => super::proofs::TrieNode::Binary { 
-                left, 
-                right, 
-                node_hash 
+            MerkleNode::Binary {
+                left,
+                right,
+                node_hash,
+            } => super::proofs::TrieNode::Binary {
+                left,
+                right,
+                node_hash,
             },
         }
     }

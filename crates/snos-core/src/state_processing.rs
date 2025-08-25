@@ -1,14 +1,6 @@
-use std::collections::{BTreeMap, HashMap};
-use starknet_types_core::felt::Felt;
-use starknet::core::types::{BlockId, MaybePendingStateUpdate, TransactionTraceWithHash};
-use starknet::providers::Provider;
-use starknet_api::core::{ClassHash, CompiledClassHash, ContractAddress, Nonce};
-use starknet_api::state::StorageKey;
-use starknet_os::io::os_input::{CachedStateInput, OsBlockInput};
-use starknet_os_types::deprecated_compiled_class::GenericDeprecatedCompiledClass;
-use starknet_os_types::casm_contract_class::GenericCasmContractClass;
-
-use rpc_client::RpcClient;
+use starknet::core::types::BlockId;
+use starknet_os::io::os_input::CachedStateInput;
+use std::collections::HashMap;
 
 /// Represents the previous BlockId for the current scope
 /// Defaults to None when the current BlockId is 0
@@ -24,7 +16,7 @@ pub enum StateProcessingError {
 }
 
 /// Helper function to create a complete CachedStateInput
-/// 
+///
 /// This can combine multiple state updates if needed
 #[allow(dead_code)]
 pub fn merge_cached_state_inputs(inputs: &[CachedStateInput]) -> CachedStateInput {
@@ -38,13 +30,21 @@ pub fn merge_cached_state_inputs(inputs: &[CachedStateInput]) -> CachedStateInpu
     for input in inputs {
         // Merge storage
         for (address, storage) in &input.storage {
-            merged.storage.entry(*address).or_default().extend(storage.clone());
+            merged
+                .storage
+                .entry(*address)
+                .or_default()
+                .extend(storage.clone());
         }
 
         // Merge other mappings (later entries overwrite earlier ones)
-        merged.address_to_class_hash.extend(&input.address_to_class_hash);
+        merged
+            .address_to_class_hash
+            .extend(&input.address_to_class_hash);
         merged.address_to_nonce.extend(&input.address_to_nonce);
-        merged.class_hash_to_compiled_class_hash.extend(&input.class_hash_to_compiled_class_hash);
+        merged
+            .class_hash_to_compiled_class_hash
+            .extend(&input.class_hash_to_compiled_class_hash);
     }
 
     merged
@@ -71,7 +71,7 @@ mod tests {
     //         deprecated_compiled_classes: BTreeMap::new(),
     //         declared_class_hash_component_hashes: HashMap::new(),
     //     };
-        
+
     //     // Test that structure is correctly organized
     //     assert!(processed.compiled_classes.is_empty());
     //     assert!(processed.deprecated_compiled_classes.is_empty());
@@ -86,4 +86,4 @@ mod tests {
 // 2. build_compiled_class_and_maybe_update_class_hash_to_compiled_class_hash() - Class compilation
 // 3. format_declared_classes() - Format declared classes for OS consumption
 // 4. compile_contract_class() - Compile Sierra to CASM
-// 5. Full integration with commitment_utils for creating complete OsBlockInput 
+// 5. Full integration with commitment_utils for creating complete OsBlockInput

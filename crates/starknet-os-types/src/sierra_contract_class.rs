@@ -47,34 +47,48 @@ impl GenericSierraContractClass {
     }
 
     pub fn get_serialized_contract_class(&self) -> Result<&Vec<u8>, ContractClassError> {
-        self.serialized_class.get_or_try_init(|| serde_json::to_vec(self)).map_err(Into::into)
+        self.serialized_class
+            .get_or_try_init(|| serde_json::to_vec(self))
+            .map_err(Into::into)
     }
 
-    fn build_starknet_core_class(&self) -> Result<StarknetCoreSierraContractClass, ContractClassError> {
+    fn build_starknet_core_class(
+        &self,
+    ) -> Result<StarknetCoreSierraContractClass, ContractClassError> {
         let serialized_class = self.get_serialized_contract_class()?;
         let sierra_class: starknet_core::types::contract::SierraClass =
             serde_json::from_slice(serialized_class).map_err(ContractClassError::SerdeError)?;
 
-        sierra_class.flatten().map_err(|e| ContractClassError::SerdeError(serde_json::Error::custom(e)))
+        sierra_class
+            .flatten()
+            .map_err(|e| ContractClassError::SerdeError(serde_json::Error::custom(e)))
     }
-    pub fn get_cairo_lang_contract_class(&self) -> Result<&CairoLangSierraContractClass, ContractClassError> {
+    pub fn get_cairo_lang_contract_class(
+        &self,
+    ) -> Result<&CairoLangSierraContractClass, ContractClassError> {
         self.cairo_lang_contract_class
             .get_or_try_init(|| self.build_cairo_lang_class().map(Arc::new))
             .map(|boxed| boxed.as_ref())
     }
 
-    pub fn get_starknet_core_contract_class(&self) -> Result<&StarknetCoreSierraContractClass, ContractClassError> {
+    pub fn get_starknet_core_contract_class(
+        &self,
+    ) -> Result<&StarknetCoreSierraContractClass, ContractClassError> {
         self.starknet_core_contract_class
             .get_or_try_init(|| self.build_starknet_core_class().map(Arc::new))
             .map(|boxed| boxed.as_ref())
     }
 
-    pub fn to_cairo_lang_contract_class(self) -> Result<CairoLangSierraContractClass, ContractClassError> {
+    pub fn to_cairo_lang_contract_class(
+        self,
+    ) -> Result<CairoLangSierraContractClass, ContractClassError> {
         let cairo_lang_class = self.get_cairo_lang_contract_class()?;
         Ok(cairo_lang_class.clone())
     }
 
-    pub fn to_starknet_core_contract_class(self) -> Result<StarknetCoreSierraContractClass, ContractClassError> {
+    pub fn to_starknet_core_contract_class(
+        self,
+    ) -> Result<StarknetCoreSierraContractClass, ContractClassError> {
         let blockifier_class = self.get_starknet_core_contract_class()?;
         Ok(blockifier_class.clone())
     }
@@ -86,7 +100,9 @@ impl GenericSierraContractClass {
     }
 
     pub fn class_hash(&self) -> Result<GenericClassHash, ContractClassError> {
-        self.class_hash.get_or_try_init(|| self.compute_class_hash()).copied()
+        self.class_hash
+            .get_or_try_init(|| self.compute_class_hash())
+            .copied()
     }
 
     pub fn compile(&self) -> Result<GenericCasmContractClass, ContractClassError> {
@@ -95,8 +111,11 @@ impl GenericSierraContractClass {
         // https://github.com/starkware-libs/cairo/blob/main/crates/bin/starknet-sierra-compile/src/main.rs
         let add_pythonic_hints = false;
         let max_bytecode_size = 180000;
-        let casm_contract_class =
-            CairoLangCasmClass::from_contract_class(cairo_lang_class, add_pythonic_hints, max_bytecode_size)?;
+        let casm_contract_class = CairoLangCasmClass::from_contract_class(
+            cairo_lang_class,
+            add_pythonic_hints,
+            max_bytecode_size,
+        )?;
 
         Ok(GenericCasmContractClass::from(casm_contract_class))
     }
@@ -123,10 +142,16 @@ struct ContractClassForPathfinderCompat {
     pub abi: String,
 }
 
-impl From<cairo_lang_starknet_classes::contract_class::ContractClass> for ContractClassForPathfinderCompat {
+impl From<cairo_lang_starknet_classes::contract_class::ContractClass>
+    for ContractClassForPathfinderCompat
+{
     fn from(value: cairo_lang_starknet_classes::contract_class::ContractClass) -> Self {
         Self {
-            sierra_program: value.sierra_program.into_iter().map(|x| Felt252::from(x.value)).collect(),
+            sierra_program: value
+                .sierra_program
+                .into_iter()
+                .map(|x| Felt252::from(x.value))
+                .collect(),
             contract_class_version: value.contract_class_version,
             entry_points_by_type: value.entry_points_by_type,
             abi: value.abi.map(|abi| abi.json()).unwrap_or_default(),
@@ -158,8 +183,9 @@ impl Serialize for GenericSierraContractClass {
         if let Some(cairo_lang_class) = self.cairo_lang_contract_class.get() {
             cairo_lang_class.serialize(serializer)
         } else if let Some(starknet_core_class) = self.starknet_core_contract_class.get() {
-            let class_with_abi = FlattenedSierraClassWithAbi::try_from(starknet_core_class.as_ref())
-                .map_err(|e| S::Error::custom(e.to_string()))?;
+            let class_with_abi =
+                FlattenedSierraClassWithAbi::try_from(starknet_core_class.as_ref())
+                    .map_err(|e| S::Error::custom(e.to_string()))?;
             class_with_abi.serialize(serializer)
         } else {
             Err(S::Error::custom("No possible serialization"))
