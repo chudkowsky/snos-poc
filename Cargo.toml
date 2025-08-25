@@ -12,8 +12,10 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
-# building on top of the commit: 6f89c526c4478c98c22082065a6a3e5eecd0443b on the main sequencer repo
+# building on top of the commit: 27e6e36d4f4a35341635a571f36317582d4b00d0 on the main sequencer repo
+# the above commit belongs to the 0.15.0-rc2 tag as well
 # https://github.com/starkware-libs/sequencer
+# commit below is just making a couple of things public for the usage!!!
 blockifier = { git = "https://github.com/Mohiiit/sequencer", rev="fe542e931c90eee7052ab4160348ad8ac296e3b9", features = ["testing"]}
 starknet_api = { git = "https://github.com/Mohiiit/sequencer", rev="fe542e931c90eee7052ab4160348ad8ac296e3b9", features = ["testing"]}
 starknet_os = { git = "https://github.com/Mohiiit/sequencer", rev="fe542e931c90eee7052ab4160348ad8ac296e3b9", features = ["testing"]}
