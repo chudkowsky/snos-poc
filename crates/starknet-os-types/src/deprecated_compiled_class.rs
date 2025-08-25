@@ -185,8 +185,7 @@ mod tests {
     use super::*;
 
     const DEPRECATED_CLASS: &[u8] = include_bytes!(
-        "../../../tests/integration/contracts/blockifier_contracts/feature_contracts/cairo0/compiled/\
-         test_contract_compiled.json"
+        "../../../resources/test_contract_compiled.json"
     );
 
     #[test]

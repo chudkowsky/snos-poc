@@ -168,8 +168,7 @@ mod tests {
     use crate::hash::Hash;
 
     const CONTRACT_BYTES: &[u8] = include_bytes!(
-        "../../../tests/integration/contracts/blockifier_contracts/feature_contracts/cairo1/compiled/test_contract.\
-         casm.json"
+        "../../../resources/test_contract.casm.json"
     );
 
     #[test]

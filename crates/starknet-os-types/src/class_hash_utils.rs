@@ -84,13 +84,11 @@ mod tests {
     use super::*;
 
     const TEST_CONTRACT_SIERRA_CLASS: &[u8] = include_bytes!(
-        "../../../tests/integration/contracts/blockifier_contracts/feature_contracts/cairo1/compiled/test_contract.\
-         sierra"
+        "../../../resources/test_contract.sierra"
     );
 
     const EMPTY_CONTRACT_SIERRA_CLASS: &[u8] = include_bytes!(
-        "../../../tests/integration/contracts/blockifier_contracts/feature_contracts/cairo1/compiled/empty_contract.\
-         sierra"
+        "../../../resources/empty_contract.sierra"
     );
 
     /// Tests that component hashing works.
