@@ -14,8 +14,8 @@ use starknet::providers::Provider;
 use starknet::core::types::SierraEntryPoint;
 use starknet_api::hash::PoseidonHash;
 use starknet_crypto::poseidon_hash_many;
-use starknet_api::state::ContractClassComponentHashes as OsContractClassComponentHashes;
-
+use starknet_os::io::os_input::ContractClassComponentHashes as OsContractClassComponentHashes;
+use starknet_patricia::hash::hash_trait::HashOutput;
 
 /// Holds the hashes of the contract class components, to be used for calculating the final hash.
 /// Note: the order of the struct member must not be changed since it determines the hash order.
@@ -34,11 +34,11 @@ impl ContractClassComponentHashes {
     pub fn to_os_format(&self) -> OsContractClassComponentHashes {
         OsContractClassComponentHashes {
             contract_class_version: self.contract_class_version,
-            external_functions_hash: PoseidonHash(self.external_functions_hash),
-            l1_handlers_hash: PoseidonHash(self.l1_handlers_hash),
-            constructors_hash: PoseidonHash(self.constructors_hash),
-            abi_hash: self.abi_hash,
-            sierra_program_hash: self.sierra_program_hash,
+            external_functions_hash: HashOutput(self.external_functions_hash),
+            l1_handlers_hash: HashOutput(self.l1_handlers_hash),
+            constructors_hash: HashOutput(self.constructors_hash),
+            abi_hash: HashOutput(self.abi_hash),
+            sierra_program_hash: HashOutput(self.sierra_program_hash),
         }
     }
 }

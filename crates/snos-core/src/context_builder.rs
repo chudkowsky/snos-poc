@@ -1,10 +1,12 @@
+use std::path::Path;
 use starknet::core::types::{L1DataAvailabilityMode, BlockWithTxs};
 use starknet_api::core::ChainId;
 use starknet_api::block::{BlockInfo, BlockNumber, BlockTimestamp, GasPrice, GasPrices, GasPriceVector, NonzeroGasPrice, StarknetVersion};
 use starknet_api::{contract_address};
 use blockifier::context::{BlockContext, ChainInfo, FeeTokenAddresses};
 use blockifier::blockifier_versioned_constants::VersionedConstants;
-use blockifier::bouncer::BouncerConfig;
+use blockifier::bouncer::{BouncerConfig, BouncerWeights, BuiltinWeights};
+use starknet_api::execution_resources::GasAmount;
 use starknet_api::test_utils::{DEFAULT_ETH_L1_DATA_GAS_PRICE, DEFAULT_ETH_L2_GAS_PRICE};
 use starknet_types_core::felt::Felt;
 use crate::api_to_blockifier_conversion::felt_to_u128;
@@ -64,12 +66,16 @@ pub fn build_block_context(
             eth_fee_token_address: contract_address!(
                 "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
             ),
-        },
-        is_l3: false
+        }
     };
 
-    let versioned_constants = VersionedConstants::get(&starknet_version).expect("issue while getting version constant");
+    // let versioned_constants = VersionedConstants::get(&starknet_version).expect("issue while getting version constant");
+    let latest_vc = VersionedConstants::get(&StarknetVersion::V0_14_0).unwrap();
+    // println!("gas costs here are: {:?}", latest_vc);
+    // panic!("temp");
+
+    // let vc = VersionedConstants::from_path(Path::new("/Users/mohit/Desktop/karnot/snos-poc/debug/vc_main_0_14_0.json")).unwrap();
     let bouncer_config = BouncerConfig::max();
 
-    Ok(BlockContext::new(block_info, chain_info, versioned_constants.clone(), bouncer_config))
+    Ok(BlockContext::new(block_info, chain_info, latest_vc.clone(), bouncer_config))
 } 

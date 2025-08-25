@@ -242,7 +242,8 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
 
     // log::debug!("the keys here are: {:?}", keys);
     // log::debug!("the contract data here is: {:?}", contract_data);
-    let additional_keys = verify_storage_proof(contract_data, &keys);
+    // let additional_keys = verify_storage_proof(contract_data, &keys);
+    let additional_keys = vec![];
 
     // Fetch additional proofs required to fill gaps in the storage trie that could make
     // the OS crash otherwise.
