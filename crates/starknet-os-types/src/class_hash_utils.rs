@@ -19,8 +19,9 @@ const CLASS_VERSION_PREFIX: &str = "CONTRACT_CLASS_V";
 fn compute_hash_on_sierra_entry_points<'a, EntryPoints: Iterator<Item = &'a SierraEntryPoint>>(
     entry_points: EntryPoints,
 ) -> Felt {
-    let flat_entry_points: Vec<Felt> =
-        entry_points.flat_map(|entry_point| [entry_point.selector, Felt::from(entry_point.function_idx)]).collect();
+    let flat_entry_points: Vec<Felt> = entry_points
+        .flat_map(|entry_point| [entry_point.selector, Felt::from(entry_point.function_idx)])
+        .collect();
 
     poseidon_hash_many(flat_entry_points.iter())
 }
@@ -56,7 +57,10 @@ impl ContractClassComponentHashes {
 
 impl From<starknet_core::types::FlattenedSierraClass> for ContractClassComponentHashes {
     fn from(sierra_class: starknet_core::types::FlattenedSierraClass) -> Self {
-        let version_str = format!("{CLASS_VERSION_PREFIX}{}", sierra_class.contract_class_version);
+        let version_str = format!(
+            "{CLASS_VERSION_PREFIX}{}",
+            sierra_class.contract_class_version
+        );
         let contract_class_version = Felt::from_bytes_be_slice(version_str.as_bytes());
 
         let sierra_program_hash = poseidon_hash_many(sierra_class.sierra_program.iter());
@@ -66,7 +70,9 @@ impl From<starknet_core::types::FlattenedSierraClass> for ContractClassComponent
             external_functions_hash: compute_hash_on_sierra_entry_points(
                 sierra_class.entry_points_by_type.external.iter(),
             ),
-            l1_handlers_hash: compute_hash_on_sierra_entry_points(sierra_class.entry_points_by_type.l1_handler.iter()),
+            l1_handlers_hash: compute_hash_on_sierra_entry_points(
+                sierra_class.entry_points_by_type.l1_handler.iter(),
+            ),
             constructors_hash: compute_hash_on_sierra_entry_points(
                 sierra_class.entry_points_by_type.constructor.iter(),
             ),
@@ -83,13 +89,11 @@ mod tests {
 
     use super::*;
 
-    const TEST_CONTRACT_SIERRA_CLASS: &[u8] = include_bytes!(
-        "../../../resources/test_contract.sierra"
-    );
+    const TEST_CONTRACT_SIERRA_CLASS: &[u8] =
+        include_bytes!("../../../resources/test_contract.sierra");
 
-    const EMPTY_CONTRACT_SIERRA_CLASS: &[u8] = include_bytes!(
-        "../../../resources/empty_contract.sierra"
-    );
+    const EMPTY_CONTRACT_SIERRA_CLASS: &[u8] =
+        include_bytes!("../../../resources/empty_contract.sierra");
 
     /// Tests that component hashing works.
     /// The following hashes were generated manually by using the following Python snippet:

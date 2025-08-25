@@ -1,10 +1,10 @@
 use once_cell::sync::OnceCell;
 use std::sync::Arc;
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use starknet_api::contract_class::SierraVersion;
 use crate::error::{ContractClassError, ConversionError};
 use crate::hash::GenericClassHash;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use starknet_api::contract_class::SierraVersion;
 
 pub type CairoLangCasmClass = cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 pub type BlockifierCasmClass = starknet_api::contract_class::VersionedCasm;
@@ -26,11 +26,14 @@ pub struct GenericCasmContractClass {
 fn blockifier_contract_class_from_cairo_lang_class(
     cairo_lang_class: CairoLangCasmClass,
 ) -> Result<BlockifierCasmClass, ContractClassError> {
-    let blockifier_class = BlockifierCasmClass::try_from((cairo_lang_class, SierraVersion::default())).unwrap();
+    let blockifier_class =
+        BlockifierCasmClass::try_from((cairo_lang_class, SierraVersion::default())).unwrap();
     Ok(blockifier_class)
 }
 
-fn cairo_lang_contract_class_from_bytes(bytes: &[u8]) -> Result<CairoLangCasmClass, ContractClassError> {
+fn cairo_lang_contract_class_from_bytes(
+    bytes: &[u8],
+) -> Result<CairoLangCasmClass, ContractClassError> {
     let contract_class = serde_json::from_slice(bytes)?;
     Ok(contract_class)
 }
@@ -51,12 +54,16 @@ impl GenericCasmContractClass {
             return Ok(contract_class);
         }
 
-        Err(ContractClassError::ConversionError(ConversionError::CairoLangClassMissing))
+        Err(ContractClassError::ConversionError(
+            ConversionError::CairoLangClassMissing,
+        ))
     }
 
     fn build_blockifier_class(&self) -> Result<BlockifierCasmClass, ContractClassError> {
         if let Some(cairo_lang_class) = self.cairo_lang_contract_class.get() {
-            return blockifier_contract_class_from_cairo_lang_class(cairo_lang_class.as_ref().clone());
+            return blockifier_contract_class_from_cairo_lang_class(
+                cairo_lang_class.as_ref().clone(),
+            );
         }
 
         if let Some(serialized_class) = &self.serialized_class.get() {
@@ -67,7 +74,9 @@ impl GenericCasmContractClass {
             return blockifier_contract_class_from_cairo_lang_class(cairo_lang_class);
         }
 
-        Err(ContractClassError::ConversionError(ConversionError::BlockifierClassMissing))
+        Err(ContractClassError::ConversionError(
+            ConversionError::BlockifierClassMissing,
+        ))
     }
     pub fn get_cairo_lang_contract_class(&self) -> Result<&CairoLangCasmClass, ContractClassError> {
         self.cairo_lang_contract_class
@@ -75,7 +84,9 @@ impl GenericCasmContractClass {
             .map(|boxed| boxed.as_ref())
     }
 
-    pub fn get_blockifier_contract_class(&self) -> Result<&BlockifierCasmClass, ContractClassError> {
+    pub fn get_blockifier_contract_class(
+        &self,
+    ) -> Result<&BlockifierCasmClass, ContractClassError> {
         self.blockifier_contract_class
             .get_or_try_init(|| self.build_blockifier_class().map(Arc::new))
             .map(|boxed| boxed.as_ref())
@@ -95,11 +106,15 @@ impl GenericCasmContractClass {
         let compiled_class = self.get_cairo_lang_contract_class()?;
         let class_hash_felt = compiled_class.compiled_class_hash();
 
-        Ok(GenericClassHash::from_bytes_be(class_hash_felt.to_bytes_be()))
+        Ok(GenericClassHash::from_bytes_be(
+            class_hash_felt.to_bytes_be(),
+        ))
     }
 
     pub fn class_hash(&self) -> Result<GenericClassHash, ContractClassError> {
-        self.class_hash.get_or_try_init(|| self.compute_class_hash()).copied()
+        self.class_hash
+            .get_or_try_init(|| self.compute_class_hash())
+            .copied()
     }
 }
 
@@ -110,8 +125,9 @@ impl Serialize for GenericCasmContractClass {
     {
         // It seems like there is no way to just pass the `serialized_class` field as the output
         // of `serialize()`, so we are forced to serialize an actual class instance.
-        let cairo_lang_class =
-            self.get_cairo_lang_contract_class().map_err(|e| serde::ser::Error::custom(e.to_string()))?;
+        let cairo_lang_class = self
+            .get_cairo_lang_contract_class()
+            .map_err(|e| serde::ser::Error::custom(e.to_string()))?;
         cairo_lang_class.serialize(serializer)
     }
 }
@@ -167,9 +183,7 @@ mod tests {
     use super::*;
     use crate::hash::Hash;
 
-    const CONTRACT_BYTES: &[u8] = include_bytes!(
-        "../../../resources/test_contract.casm.json"
-    );
+    const CONTRACT_BYTES: &[u8] = include_bytes!("../../../resources/test_contract.casm.json");
 
     #[test]
     fn test_serialize_and_deserialize() {
@@ -177,7 +191,8 @@ mod tests {
 
         let serialized_class = serde_json::to_vec(&generic_class).unwrap();
         // Check that the deserialization works
-        let _deserialized_class: GenericCasmContractClass = serde_json::from_slice(&serialized_class).unwrap();
+        let _deserialized_class: GenericCasmContractClass =
+            serde_json::from_slice(&serialized_class).unwrap();
     }
 
     #[test]
@@ -189,8 +204,11 @@ mod tests {
 
         assert_eq!(generated_cairo_lang_class, cairo_lang_class);
 
-        let deserialized_generic_class: GenericCasmContractClass = serde_json::from_slice(CONTRACT_BYTES).unwrap();
-        let deserialized_cairo_lang_class = deserialized_generic_class.to_cairo_lang_contract_class().unwrap();
+        let deserialized_generic_class: GenericCasmContractClass =
+            serde_json::from_slice(CONTRACT_BYTES).unwrap();
+        let deserialized_cairo_lang_class = deserialized_generic_class
+            .to_cairo_lang_contract_class()
+            .unwrap();
 
         assert_eq!(deserialized_cairo_lang_class, cairo_lang_class);
     }
@@ -203,7 +221,8 @@ mod tests {
         // Some weird type conversions here to load the class hash from string easily, may be
         // improved with more methods on `Hash` / `GenericClassHash`.
         let expected_class_hash =
-            Felt::from_str("0x607c67298d45092cca5b2ae6804373dd8a2cbe7d2ec4072b3f67097461d5ff4").unwrap();
+            Felt::from_str("0x607c67298d45092cca5b2ae6804373dd8a2cbe7d2ec4072b3f67097461d5ff4")
+                .unwrap();
         assert_eq!(Felt::from(*class_hash), expected_class_hash);
     }
 
@@ -297,7 +316,10 @@ mod tests {
         TEST_CONTRACT_WITH_SEGMENTATION,
         "0x5517AD8471C9AA4D1ADD31837240DEAD9DC6653854169E489A813DB4376BE9C"
     )]
-    fn test_compiled_class_hash_without_segmentation(#[case] test_contract: &str, #[case] expected_hash_str: &str) {
+    fn test_compiled_class_hash_without_segmentation(
+        #[case] test_contract: &str,
+        #[case] expected_hash_str: &str,
+    ) {
         let expected_hash = Felt::from_hex(expected_hash_str).unwrap();
         let expected_compiled_class_hash = GenericClassHash::new(Hash::from(expected_hash));
 

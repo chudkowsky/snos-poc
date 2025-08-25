@@ -1,13 +1,13 @@
 pub mod client;
 pub mod pathfinder;
 pub mod state_reader;
-mod utils;
 mod types;
+mod utils;
 
 pub use client::RpcClient;
 
-use starknet_types_core::felt::Felt;
 use starknet_os_types::hash::Hash;
+use starknet_types_core::felt::Felt;
 
 /// Simplified hash function trait for our use case
 pub trait SimpleHashFunction {

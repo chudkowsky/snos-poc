@@ -1,9 +1,4 @@
-use snos_core::{
-    generate_pie, 
-    PieGenerationInput, 
-    ChainConfig, 
-    OsHintsConfiguration
-};
+use snos_core::{generate_pie, ChainConfig, OsHintsConfiguration, PieGenerationInput};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

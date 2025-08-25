@@ -1,7 +1,9 @@
-use blockifier::execution::contract_class::{RunnableCompiledClass, CompiledClassV0, CompiledClassV1};
+use crate::client::RpcClient;
+use blockifier::execution::contract_class::{
+    CompiledClassV0, CompiledClassV1, RunnableCompiledClass,
+};
 use blockifier::state::errors::StateError;
 use blockifier::state::state_api::{StateReader, StateResult};
-use crate::client::RpcClient;
 use starknet::core::types::{BlockId, Felt, StarknetError};
 use starknet::providers::{Provider, ProviderError};
 use starknet_api::core::{ClassHash, CompiledClassHash, ContractAddress, Nonce};
@@ -37,7 +39,11 @@ fn to_state_err<E: ToString>(e: E) -> StateError {
 }
 
 impl AsyncRpcStateReader {
-    pub async fn get_storage_at_async(&self, contract_address: ContractAddress, key: StorageKey) -> StateResult<Felt> {
+    pub async fn get_storage_at_async(
+        &self,
+        contract_address: ContractAddress,
+        key: StorageKey,
+    ) -> StateResult<Felt> {
         println!("got a request of get_storage_at with parameters the contract address: {:?} and the key: {:?}", contract_address, key);
         let storage_value = match self
             .rpc_client
@@ -53,9 +59,19 @@ impl AsyncRpcStateReader {
         Ok(storage_value)
     }
 
-    pub async fn get_nonce_at_async(&self, contract_address: ContractAddress) -> StateResult<Nonce> {
-        println!("got a request of get_nonce_at with parameters the contract address: {:?}", contract_address);
-        let res = self.rpc_client.starknet_rpc().get_nonce(self.block_id, *contract_address.key()).await;
+    pub async fn get_nonce_at_async(
+        &self,
+        contract_address: ContractAddress,
+    ) -> StateResult<Nonce> {
+        println!(
+            "got a request of get_nonce_at with parameters the contract address: {:?}",
+            contract_address
+        );
+        let res = self
+            .rpc_client
+            .starknet_rpc()
+            .get_nonce(self.block_id, *contract_address.key())
+            .await;
         let nonce = match res {
             Ok(value) => Ok(value),
             Err(ProviderError::StarknetError(StarknetError::ContractNotFound)) => Ok(Felt::ZERO),
@@ -64,21 +80,44 @@ impl AsyncRpcStateReader {
         Ok(Nonce(nonce))
     }
 
-    pub async fn get_class_hash_at_async(&self, contract_address: ContractAddress) -> StateResult<ClassHash> {
-        println!("got a request of get_class_hash_at with parameters the contract address: {:?}", contract_address);
-        let class_hash =
-            match self.rpc_client.starknet_rpc().get_class_hash_at(self.block_id, *contract_address.key()).await {
-                Ok(class_hash) => Ok(class_hash),
-                Err(ProviderError::StarknetError(StarknetError::ContractNotFound)) => Ok(ClassHash::default().0),
-                Err(e) => Err(provider_error_to_state_error(e)),
-            }?;
+    pub async fn get_class_hash_at_async(
+        &self,
+        contract_address: ContractAddress,
+    ) -> StateResult<ClassHash> {
+        println!(
+            "got a request of get_class_hash_at with parameters the contract address: {:?}",
+            contract_address
+        );
+        let class_hash = match self
+            .rpc_client
+            .starknet_rpc()
+            .get_class_hash_at(self.block_id, *contract_address.key())
+            .await
+        {
+            Ok(class_hash) => Ok(class_hash),
+            Err(ProviderError::StarknetError(StarknetError::ContractNotFound)) => {
+                Ok(ClassHash::default().0)
+            }
+            Err(e) => Err(provider_error_to_state_error(e)),
+        }?;
 
         Ok(ClassHash(class_hash))
     }
 
-    pub async fn get_compiled_class_async(&self, class_hash: ClassHash) -> StateResult<RunnableCompiledClass> {
-        println!("got a request of get_compiled_class with parameters the class hash: {:?}", class_hash);
-        let contract_class = match self.rpc_client.starknet_rpc().get_class(self.block_id, class_hash.0).await {
+    pub async fn get_compiled_class_async(
+        &self,
+        class_hash: ClassHash,
+    ) -> StateResult<RunnableCompiledClass> {
+        println!(
+            "got a request of get_compiled_class with parameters the class hash: {:?}",
+            class_hash
+        );
+        let contract_class = match self
+            .rpc_client
+            .starknet_rpc()
+            .get_class(self.block_id, class_hash.0)
+            .await
+        {
             Ok(contract_class) => Ok(contract_class),
             // If the ContractClass is declared in the current block,
             // might trigger this error when trying to get it on the previous block.
@@ -94,13 +133,14 @@ impl AsyncRpcStateReader {
             starknet::core::types::ContractClass::Sierra(sierra_class) => {
                 // The key insight: Fix the ABI field encoding issue
                 println!("Converting Sierra contract class with ABI fix...");
-                
+
                 // First, serialize the sierra class to JSON
                 let sierra_json = serde_json::to_string(&sierra_class).map_err(to_state_err)?;
-                
+
                 // Parse the JSON to fix the ABI field
-                let mut sierra_value: serde_json::Value = serde_json::from_str(&sierra_json).map_err(to_state_err)?;
-                
+                let mut sierra_value: serde_json::Value =
+                    serde_json::from_str(&sierra_json).map_err(to_state_err)?;
+
                 // The ABI field is a JSON string, but GenericSierraContractClass expects it to be parseable
                 // Let's check if the ABI field needs to be converted from string to JSON
                 if let Some(abi_field) = sierra_value.get_mut("abi") {
@@ -118,49 +158,76 @@ impl AsyncRpcStateReader {
                         }
                     }
                 }
-                
+
                 // Re-serialize the fixed JSON
-                let fixed_sierra_json = serde_json::to_string(&sierra_value).map_err(to_state_err)?;
-                
+                let fixed_sierra_json =
+                    serde_json::to_string(&sierra_value).map_err(to_state_err)?;
+
                 // Parse as GenericSierraContractClass
-                let generic_sierra = GenericSierraContractClass::from_bytes(fixed_sierra_json.into_bytes());
-                
+                let generic_sierra =
+                    GenericSierraContractClass::from_bytes(fixed_sierra_json.into_bytes());
+
                 // Try compilation
                 match generic_sierra.compile() {
                     Ok(compiled_class) => {
                         println!("✅ Sierra compilation succeeded!");
-                        let versioned_casm = compiled_class.to_blockifier_contract_class().map_err(to_state_err)?;
-                        
+                        let versioned_casm = compiled_class
+                            .to_blockifier_contract_class()
+                            .map_err(to_state_err)?;
+
                         // Convert VersionedCasm to CompiledClassV1 using TryFrom
-                        let compiled_class_v1 = CompiledClassV1::try_from(versioned_casm)
-                            .map_err(|e| StateError::StateReadError(format!("Failed to convert VersionedCasm to CompiledClassV1: {}", e)))?;
-                        
+                        let compiled_class_v1 =
+                            CompiledClassV1::try_from(versioned_casm).map_err(|e| {
+                                StateError::StateReadError(format!(
+                                    "Failed to convert VersionedCasm to CompiledClassV1: {}",
+                                    e
+                                ))
+                            })?;
+
                         RunnableCompiledClass::V1(compiled_class_v1)
                     }
                     Err(e) => {
                         println!("⚠️  Sierra compilation failed: {}", e);
-                        return Err(StateError::StateReadError(format!("Sierra compilation failed: {}", e)));
+                        return Err(StateError::StateReadError(format!(
+                            "Sierra compilation failed: {}",
+                            e
+                        )));
                     }
                 }
             }
             starknet::core::types::ContractClass::Legacy(legacy_class) => {
                 // Convert between starknet crate types via serialization
                 let legacy_json = serde_json::to_string(&legacy_class).map_err(to_state_err)?;
-                let starknet_core_legacy_class: starknet_core::types::CompressedLegacyContractClass = 
+                let starknet_core_legacy_class: starknet_core::types::CompressedLegacyContractClass =
                     serde_json::from_str(&legacy_json).map_err(to_state_err)?;
-                
+
                 // Now use the decompression function from starknet_core_addons
-                let decompressed_legacy_class = decompress_starknet_core_contract_class(starknet_core_legacy_class)
-                    .map_err(|e| StateError::StateReadError(format!("Failed to decompress legacy contract class: {}", e)))?;
-                
+                let decompressed_legacy_class = decompress_starknet_core_contract_class(
+                    starknet_core_legacy_class,
+                )
+                .map_err(|e| {
+                    StateError::StateReadError(format!(
+                        "Failed to decompress legacy contract class: {}",
+                        e
+                    ))
+                })?;
+
                 // Convert the decompressed LegacyContractClass to GenericDeprecatedCompiledClass
-                let generic_deprecated = GenericDeprecatedCompiledClass::from(decompressed_legacy_class);
-                let deprecated_contract_class = generic_deprecated.to_blockifier_contract_class().map_err(to_state_err)?;
-                
+                let generic_deprecated =
+                    GenericDeprecatedCompiledClass::from(decompressed_legacy_class);
+                let deprecated_contract_class = generic_deprecated
+                    .to_blockifier_contract_class()
+                    .map_err(to_state_err)?;
+
                 // Convert DeprecatedContractClass to CompiledClassV0 using TryFrom
                 let compiled_class_v0 = CompiledClassV0::try_from(deprecated_contract_class)
-                    .map_err(|e| StateError::StateReadError(format!("Failed to convert DeprecatedContractClass to CompiledClassV0: {}", e)))?;
-                
+                    .map_err(|e| {
+                        StateError::StateReadError(format!(
+                            "Failed to convert DeprecatedContractClass to CompiledClassV0: {}",
+                            e
+                        ))
+                    })?;
+
                 RunnableCompiledClass::V0(compiled_class_v0)
             }
         };
@@ -168,8 +235,14 @@ impl AsyncRpcStateReader {
         Ok(runnable_contract_class)
     }
 
-    pub async fn get_compiled_class_hash_async(&self, class_hash: ClassHash) -> StateResult<CompiledClassHash> {
-        println!("got a request of get_compiled_class_hash with parameters the class hash: {:?}", class_hash);
+    pub async fn get_compiled_class_hash_async(
+        &self,
+        class_hash: ClassHash,
+    ) -> StateResult<CompiledClassHash> {
+        println!(
+            "got a request of get_compiled_class_hash with parameters the class hash: {:?}",
+            class_hash
+        );
         let contract_class = self
             .rpc_client
             .starknet_rpc()
@@ -181,8 +254,9 @@ impl AsyncRpcStateReader {
             starknet::core::types::ContractClass::Sierra(sierra_class) => {
                 // Apply the same ABI fix as in get_compiled_class_async
                 let sierra_json = serde_json::to_string(&sierra_class).map_err(to_state_err)?;
-                let mut sierra_value: serde_json::Value = serde_json::from_str(&sierra_json).map_err(to_state_err)?;
-                
+                let mut sierra_value: serde_json::Value =
+                    serde_json::from_str(&sierra_json).map_err(to_state_err)?;
+
                 // Fix the ABI field if it's a JSON string
                 if let Some(abi_field) = sierra_value.get_mut("abi") {
                     if let Some(abi_str) = abi_field.as_str() {
@@ -191,24 +265,34 @@ impl AsyncRpcStateReader {
                         }
                     }
                 }
-                
-                let fixed_sierra_json = serde_json::to_string(&sierra_value).map_err(to_state_err)?;
-                let generic_sierra = GenericSierraContractClass::from_bytes(fixed_sierra_json.into_bytes());
+
+                let fixed_sierra_json =
+                    serde_json::to_string(&sierra_value).map_err(to_state_err)?;
+                let generic_sierra =
+                    GenericSierraContractClass::from_bytes(fixed_sierra_json.into_bytes());
                 let compiled_class = generic_sierra.compile().map_err(to_state_err)?;
                 compiled_class.class_hash().map_err(to_state_err)?
             }
             starknet::core::types::ContractClass::Legacy(legacy_class) => {
                 // Convert between starknet crate types via serialization
                 let legacy_json = serde_json::to_string(&legacy_class).map_err(to_state_err)?;
-                let starknet_core_legacy_class: starknet_core::types::CompressedLegacyContractClass = 
+                let starknet_core_legacy_class: starknet_core::types::CompressedLegacyContractClass =
                     serde_json::from_str(&legacy_json).map_err(to_state_err)?;
-                
+
                 // Use the decompression function from starknet_core_addons
-                let decompressed_legacy_class = decompress_starknet_core_contract_class(starknet_core_legacy_class)
-                    .map_err(|e| StateError::StateReadError(format!("Failed to decompress legacy contract class: {}", e)))?;
-                
+                let decompressed_legacy_class = decompress_starknet_core_contract_class(
+                    starknet_core_legacy_class,
+                )
+                .map_err(|e| {
+                    StateError::StateReadError(format!(
+                        "Failed to decompress legacy contract class: {}",
+                        e
+                    ))
+                })?;
+
                 // Convert the decompressed LegacyContractClass to GenericDeprecatedCompiledClass
-                let generic_deprecated = GenericDeprecatedCompiledClass::from(decompressed_legacy_class);
+                let generic_deprecated =
+                    GenericDeprecatedCompiledClass::from(decompressed_legacy_class);
                 generic_deprecated.class_hash().map_err(to_state_err)?
             }
         };
@@ -218,7 +302,11 @@ impl AsyncRpcStateReader {
 }
 
 impl StateReader for AsyncRpcStateReader {
-    fn get_storage_at(&self, contract_address: ContractAddress, key: StorageKey) -> StateResult<Felt> {
+    fn get_storage_at(
+        &self,
+        contract_address: ContractAddress,
+        key: StorageKey,
+    ) -> StateResult<Felt> {
         execute_coroutine(self.get_storage_at_async(contract_address, key))
             .map_err(|e| StateError::StateReadError(e.to_string()))?
     }
@@ -255,11 +343,19 @@ mod tests {
     }
 
     fn create_test_values() -> (ContractAddress, StorageKey, ClassHash, BlockId) {
-        let contract_address = ContractAddress::try_from(StarknetTypesFelt::from_hex_unchecked("0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d")).unwrap();
-        let storage_key = StorageKey::try_from(StarknetTypesFelt::from_hex_unchecked("0x3c204dd68b8e800b4f42e438d9ed4ccbba9f8e436518758cd36553715c1d6ab")).unwrap();
-        let class_hash = ClassHash(StarknetTypesFelt::from_hex_unchecked("0x078401746828463e2c3f92ebb261fc82f7d4d4c8d9a80a356c44580dab124cb0"));
+        let contract_address = ContractAddress::try_from(StarknetTypesFelt::from_hex_unchecked(
+            "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        ))
+        .unwrap();
+        let storage_key = StorageKey::try_from(StarknetTypesFelt::from_hex_unchecked(
+            "0x3c204dd68b8e800b4f42e438d9ed4ccbba9f8e436518758cd36553715c1d6ab",
+        ))
+        .unwrap();
+        let class_hash = ClassHash(StarknetTypesFelt::from_hex_unchecked(
+            "0x078401746828463e2c3f92ebb261fc82f7d4d4c8d9a80a356c44580dab124cb0",
+        ));
         let block_id = BlockId::Number(1311717);
-        
+
         (contract_address, storage_key, class_hash, block_id)
     }
 
@@ -267,9 +363,9 @@ mod tests {
     fn test_async_rpc_state_reader_creation() {
         let rpc_client = create_test_rpc_client();
         let block_id = BlockId::Number(1309254);
-        
+
         let state_reader = AsyncRpcStateReader::new(rpc_client, block_id);
-        
+
         // Verify the state reader was created successfully
         println!("✅ AsyncRpcStateReader created successfully");
         assert_eq!(state_reader.block_id, BlockId::Number(1309254));
@@ -290,7 +386,10 @@ mod tests {
 
         // Test get_storage_at_async - this should succeed
         println!("\n🔍 Testing get_storage_at_async...");
-        match state_reader.get_storage_at_async(contract_address, storage_key).await {
+        match state_reader
+            .get_storage_at_async(contract_address, storage_key)
+            .await
+        {
             Ok(storage_value) => {
                 println!("✅ get_storage_at_async succeeded: {:?}", storage_value);
                 // Verify we got a valid Felt value
@@ -307,7 +406,10 @@ mod tests {
             Ok(nonce) => {
                 println!("✅ get_nonce_at_async succeeded: {:?}", nonce);
                 // Verify we got a valid Nonce value
-                assert_eq!(std::any::type_name_of_val(&nonce), "starknet_api::core::Nonce");
+                assert_eq!(
+                    std::any::type_name_of_val(&nonce),
+                    "starknet_api::core::Nonce"
+                );
             }
             Err(e) => {
                 panic!("❌ get_nonce_at_async failed: {}", e);
@@ -318,9 +420,15 @@ mod tests {
         println!("\n🔍 Testing get_class_hash_at_async...");
         match state_reader.get_class_hash_at_async(contract_address).await {
             Ok(returned_class_hash) => {
-                println!("✅ get_class_hash_at_async succeeded: {:?}", returned_class_hash);
+                println!(
+                    "✅ get_class_hash_at_async succeeded: {:?}",
+                    returned_class_hash
+                );
                 // Verify we got a valid ClassHash value
-                assert_eq!(std::any::type_name_of_val(&returned_class_hash), "starknet_api::core::ClassHash");
+                assert_eq!(
+                    std::any::type_name_of_val(&returned_class_hash),
+                    "starknet_api::core::ClassHash"
+                );
             }
             Err(e) => {
                 panic!("❌ get_class_hash_at_async failed: {}", e);
@@ -332,7 +440,7 @@ mod tests {
         match state_reader.get_compiled_class_async(class_hash).await {
             Ok(runnable_class) => {
                 println!("✅ get_compiled_class_async succeeded!");
-                
+
                 // Verify we got a valid RunnableCompiledClass
                 match runnable_class {
                     RunnableCompiledClass::V0(_) => {
@@ -358,9 +466,15 @@ mod tests {
         println!("\n🔍 Testing get_compiled_class_hash_async...");
         match state_reader.get_compiled_class_hash_async(class_hash).await {
             Ok(compiled_class_hash) => {
-                println!("✅ get_compiled_class_hash_async succeeded: {:?}", compiled_class_hash);
+                println!(
+                    "✅ get_compiled_class_hash_async succeeded: {:?}",
+                    compiled_class_hash
+                );
                 // Verify we got a valid CompiledClassHash value
-                assert_eq!(std::any::type_name_of_val(&compiled_class_hash), "starknet_api::core::CompiledClassHash");
+                assert_eq!(
+                    std::any::type_name_of_val(&compiled_class_hash),
+                    "starknet_api::core::CompiledClassHash"
+                );
             }
             Err(e) => {
                 panic!("❌ get_compiled_class_hash_async failed: {}", e);
@@ -378,7 +492,7 @@ mod tests {
         let rpc_client = create_test_rpc_client();
         let block_id = BlockId::Number(1309254);
         let state_reader = AsyncRpcStateReader::new(rpc_client, block_id);
-        
+
         let (contract_address, storage_key, class_hash, _) = create_test_values();
 
         println!("Testing sync method error handling (should fail gracefully without runtime)...");
@@ -418,27 +532,44 @@ mod tests {
         println!("Testing error handling with invalid values...");
 
         // This should either succeed (returning ZERO) or fail gracefully
-        match state_reader.get_storage_at_async(invalid_contract, invalid_storage_key).await {
+        match state_reader
+            .get_storage_at_async(invalid_contract, invalid_storage_key)
+            .await
+        {
             Ok(value) => {
-                println!("✅ get_storage_at with invalid contract returned: {:?}", value);
+                println!(
+                    "✅ get_storage_at with invalid contract returned: {:?}",
+                    value
+                );
                 // Should be zero for non-existent storage
             }
             Err(e) => {
-                println!("✅ get_storage_at with invalid contract failed gracefully: {}", e);
+                println!(
+                    "✅ get_storage_at with invalid contract failed gracefully: {}",
+                    e
+                );
                 // This is also acceptable
             }
         }
 
         // Test with invalid class hash
         let invalid_class_hash = ClassHash(StarknetTypesFelt::ZERO);
-        match state_reader.get_compiled_class_async(invalid_class_hash).await {
+        match state_reader
+            .get_compiled_class_async(invalid_class_hash)
+            .await
+        {
             Ok(_) => panic!("❌ Should not succeed with invalid class hash"),
             Err(e) => {
-                println!("✅ get_compiled_class with invalid class hash failed as expected: {}", e);
+                println!(
+                    "✅ get_compiled_class with invalid class hash failed as expected: {}",
+                    e
+                );
                 // Should fail with UndeclaredClassHash or ClassHashNotFound
-                assert!(e.to_string().contains("ClassHash") || 
-                        e.to_string().contains("not found") || 
-                        e.to_string().contains("Undeclared"));
+                assert!(
+                    e.to_string().contains("ClassHash")
+                        || e.to_string().contains("not found")
+                        || e.to_string().contains("Undeclared")
+                );
             }
         }
 
@@ -448,37 +579,48 @@ mod tests {
     #[test]
     fn test_type_conversions() {
         let (contract_address, storage_key, class_hash, _) = create_test_values();
-        
+
         // Test that our test values are correctly typed
         println!("Testing type conversions for test values:");
-        
+
         // Test ContractAddress
         println!("✅ ContractAddress: {:?}", contract_address);
-        assert_eq!(std::any::type_name_of_val(&contract_address), "starknet_api::core::ContractAddress");
-        
-        // Test StorageKey  
+        assert_eq!(
+            std::any::type_name_of_val(&contract_address),
+            "starknet_api::core::ContractAddress"
+        );
+
+        // Test StorageKey
         println!("✅ StorageKey: {:?}", storage_key);
-        assert_eq!(std::any::type_name_of_val(&storage_key), "starknet_api::state::StorageKey");
-        
+        assert_eq!(
+            std::any::type_name_of_val(&storage_key),
+            "starknet_api::state::StorageKey"
+        );
+
         // Test ClassHash
         println!("✅ ClassHash: {:?}", class_hash);
-        assert_eq!(std::any::type_name_of_val(&class_hash), "starknet_api::core::ClassHash");
-        
+        assert_eq!(
+            std::any::type_name_of_val(&class_hash),
+            "starknet_api::core::ClassHash"
+        );
+
         // Test BlockId - use the actual type name we discovered
         let block_id = BlockId::Number(12345);
         println!("✅ BlockId: {:?}", block_id);
         let actual_type = std::any::type_name_of_val(&block_id);
         println!("   Actual type: {}", actual_type);
         // The type can be either depending on which crate is being used
-        assert!(actual_type == "starknet::core::types::BlockId" || 
-                actual_type == "starknet_core::types::BlockId");
+        assert!(
+            actual_type == "starknet::core::types::BlockId"
+                || actual_type == "starknet_core::types::BlockId"
+        );
     }
 
     #[test]
     fn test_helper_functions() {
         // Test error conversion helpers
         println!("Testing helper functions:");
-        
+
         // Test to_state_err
         let test_error = "Test error message";
         let state_error = to_state_err(test_error);
@@ -489,7 +631,7 @@ mod tests {
             }
             _ => panic!("❌ Wrong error type returned"),
         }
-        
+
         // Test provider_error_to_state_error with a simple error
         let simple_error = ProviderError::RateLimited;
         let converted_error = provider_error_to_state_error(simple_error);
@@ -511,16 +653,30 @@ mod tests {
         // Test multiple class hashes to see which ones work
         let test_class_hashes = vec![
             // Original class hash from the user
-            ("Original", ClassHash(StarknetTypesFelt::from_hex_unchecked("0x2e572b235e956d7badbd4e95e0da1988f0517cb5c12bd34cda47aa502124647"))),
+            (
+                "Original",
+                ClassHash(StarknetTypesFelt::from_hex_unchecked(
+                    "0x2e572b235e956d7badbd4e95e0da1988f0517cb5c12bd34cda47aa502124647",
+                )),
+            ),
             // Try some common contract class hashes that might be legacy/simpler
-            ("Simple1", ClassHash(StarknetTypesFelt::from_hex_unchecked("0x1"))),
-            ("Simple2", ClassHash(StarknetTypesFelt::from_hex_unchecked("0x10"))),
-            ("Simple3", ClassHash(StarknetTypesFelt::from_hex_unchecked("0x100"))),
+            (
+                "Simple1",
+                ClassHash(StarknetTypesFelt::from_hex_unchecked("0x1")),
+            ),
+            (
+                "Simple2",
+                ClassHash(StarknetTypesFelt::from_hex_unchecked("0x10")),
+            ),
+            (
+                "Simple3",
+                ClassHash(StarknetTypesFelt::from_hex_unchecked("0x100")),
+            ),
         ];
 
         for (name, class_hash) in test_class_hashes {
             println!("\n🔍 Testing class hash {}: {:?}", name, class_hash);
-            
+
             match state_reader.get_compiled_class_async(class_hash).await {
                 Ok(runnable_class) => {
                     println!("✅ {} succeeded!", name);
@@ -541,7 +697,9 @@ mod tests {
                 }
                 Err(e) => {
                     println!("⚠️  {} failed: {}", name, e);
-                    if e.to_string().contains("UndeclaredClassHash") || e.to_string().contains("not found") {
+                    if e.to_string().contains("UndeclaredClassHash")
+                        || e.to_string().contains("not found")
+                    {
                         println!("   (This is expected - class hash doesn't exist)");
                     } else {
                         println!("   (This might be a parsing/conversion issue)");
@@ -552,7 +710,7 @@ mod tests {
 
         println!("\n📝 All tested class hashes had issues - this might indicate:");
         println!("   1. The specific contract format isn't supported yet");
-        println!("   2. The from_bytes conversion needs adjustment");  
+        println!("   2. The from_bytes conversion needs adjustment");
         println!("   3. The class hashes we tested don't exist at this block");
         println!("\n✅ But the RPC integration and basic structure work perfectly!");
     }
