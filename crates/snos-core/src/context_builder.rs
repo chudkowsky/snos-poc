@@ -54,7 +54,7 @@ pub fn build_block_context(
                 ))
                 .unwrap(),
                 l2_gas_price: NonzeroGasPrice::new(GasPrice(
-                    felt_to_u128(&Felt::from_hex("0x199fe").unwrap()).unwrap(),
+                    felt_to_u128(&block.l2_gas_price.price_in_wei).unwrap(),
                 ))
                 .unwrap(),
             }, //TODO: update the gas prices for the right block info
@@ -68,7 +68,7 @@ pub fn build_block_context(
                 ))
                 .unwrap(),
                 l2_gas_price: NonzeroGasPrice::new(GasPrice(
-                    felt_to_u128(&Felt::from_hex("0xb2d05e00").unwrap()).unwrap(),
+                    felt_to_u128(&block.l2_gas_price.price_in_fri).unwrap(),
                 ))
                 .unwrap(),
             },
@@ -86,10 +86,10 @@ pub fn build_block_context(
         // cf. https://docs.starknet.io/tools/important-addresses/
         fee_token_addresses: FeeTokenAddresses {
             strk_fee_token_address: contract_address!(
-                "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d"
+                "0x2e7442625bab778683501c0eadbc1ea17b3535da040a12ac7d281066e915eea"
             ),
             eth_fee_token_address: contract_address!(
-                "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
+                "0x2e7442625bab778683501c0eadbc1ea17b3535da040a12ac7d281066e915eea"
             ),
         },
     };

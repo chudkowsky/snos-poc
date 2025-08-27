@@ -9,6 +9,8 @@ use starknet_os::{
     runner::run_os_stateless,
 };
 use starknet_types_core::felt::Felt;
+use std::fmt::format;
+use std::fs;
 use std::path::Path;
 
 mod api_to_blockifier_conversion;
@@ -36,9 +38,18 @@ impl Default for ChainConfig {
         Self {
             chain_id: ChainId::Sepolia,
             strk_fee_token_address: ContractAddress::try_from(Felt::from_hex_unchecked(
-                "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+                "0x2e7442625bab778683501c0eadbc1ea17b3535da040a12ac7d281066e915eea",
             ))
             .expect("Valid contract address"),
+        }
+    }
+}
+
+impl ChainConfig {
+    pub fn new(chain_id: ChainId, strk_fee_token_address: ContractAddress) -> Self {
+        Self {
+            chain_id,
+            strk_fee_token_address,
         }
     }
 }
@@ -185,6 +196,7 @@ pub async fn generate_pie(
         cached_state_inputs.len()
     );
 
+    fs::write("block_input", format!("{:#?}", os_block_inputs))?;
     log::info!("Building OS hints configuration for multi-block processing");
     let os_hints = OsHints {
         os_hints_config: OsHintsConfig {

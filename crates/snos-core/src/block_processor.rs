@@ -25,6 +25,7 @@ use starknet_os::io::os_input::{CommitmentInfo, ContractClassComponentHashes, Os
 use starknet_patricia::hash::hash_trait::HashOutput;
 use starknet_patricia::patricia_merkle_tree::types::SubTreeHeight;
 use starknet_types_core::felt::Felt;
+use tokio::fs;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
@@ -108,6 +109,7 @@ fn populate_alias_contract_keys(
         ContractAddress::try_from(Felt::TWO).expect("0x2 should be a valid contract address");
 
     let mut alias_keys = HashSet::new();
+    fs::write("output/alias_keys.txt", format!("{:?}", alias_keys))?;
 
     // Process accessed contract addresses
     for contract_address in accessed_addresses {
@@ -286,6 +288,7 @@ pub async fn collect_single_block_info(
     println!("  Step 4: Building block context...");
     let block_context = build_block_context(chain_id.clone(), &block_with_txs, starknet_version)
         .expect("issue while building the context");
+    std::fs::write("block_context",format!("{:#?}", block_context)).expect("Failed to write block context to file");
     println!("Successfully Block context built successfully");
 
     println!(" Step 5: Getting transaction traces...");
@@ -415,6 +418,7 @@ pub async fn collect_single_block_info(
         " Step 10: Executing {} transactions...",
         blockifier_txns.len()
     );
+
     let execution_deadline = None;
     let execution_outputs: Vec<_> = tmp_executor
         .execute_txs(&blockifier_txns, execution_deadline)
@@ -776,10 +780,7 @@ pub async fn collect_single_block_info(
         block_info: block_context.block_info().clone(),
         prev_block_hash: BlockHash(previous_block.unwrap().block_hash),
         new_block_hash: BlockHash(block_with_txs.block_hash),
-        old_block_number_and_hash: Some((
-            BlockNumber(older_block_number),
-            BlockHash(old_block_hash),
-        )),
+        old_block_number_and_hash: None
     };
 
     println!(
