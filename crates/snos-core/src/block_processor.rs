@@ -388,19 +388,6 @@ pub async fn collect_single_block_info(
         .map(|txn_result| txn_result.starknet_api_tx.clone())
         .collect();
 
-    // write_serializable_to_file(&blockifier_txns, "debug/blockifier_txns.json", None).expect("Failed to write blockifier txns to file");
-
-    println!("blockifier txns are: {:?}", blockifier_txns);
-
-    write_serializable_to_file(
-        &starknet_api_txns,
-        &format!("debug/starknet_api_txns_{}.json", block_number),
-        None,
-    )
-    .expect("Failed to write starknet apis to file");
-
-    // panic!("temp for now");
-
     let block_number_hash_pair = maybe_dummy_block_hash_and_number(BlockNumber(block_number));
 
     println!(" Step 9: Creating transaction executor...");
@@ -441,7 +428,6 @@ pub async fn collect_single_block_info(
         .map(|(execution_info, _)| execution_info)
         .collect();
 
-    println!("the txn execution infos is: {:?}", txn_execution_infos);
     // write_serializable_to_file(&txn_execution_infos, &format!("debug/txn_execution_info_{}.json", block_number), None).expect("Failed to write traces to file");
 
     // panic!("for now");
@@ -451,12 +437,12 @@ pub async fn collect_single_block_info(
         .map(|execution_info| execution_info.clone().into())
         .collect();
 
-    write_serializable_to_file(
-        &central_txn_execution_infos,
-        &format!("debug/central_txn_info_{}.json", block_number),
-        None,
-    )
-    .expect("Failed to write traces to file");
+    // write_serializable_to_file(
+    //     &central_txn_execution_infos,
+    //     &format!("debug/central_txn_info_{}.json", block_number),
+    //     None,
+    // )
+    // .expect("Failed to write traces to file");
 
     // central_txn_execution_infos[0].actual_fee  = Fee(central_txn_execution_infos[0].actual_fee.0 - 644127000000000);
     // panic!("temp");
