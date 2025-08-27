@@ -109,7 +109,6 @@ fn populate_alias_contract_keys(
         ContractAddress::try_from(Felt::TWO).expect("0x2 should be a valid contract address");
 
     let mut alias_keys = HashSet::new();
-    fs::write("output/alias_keys.txt", format!("{:?}", alias_keys))?;
 
     // Process accessed contract addresses
     for contract_address in accessed_addresses {
