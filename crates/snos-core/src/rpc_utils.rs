@@ -273,16 +273,6 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
         Some(contract_data) => contract_data,
     };
 
-    // log::debug!("the keys here are: {:?}", keys);
-    log::debug!(">>>>>>> the contract data here is: {:?}", contract_data);
-    log::debug!(
-        ">>>>>>> contract address for verification is: {:?}",
-        contract_address
-    );
-    log::debug!(
-        ">>>>>>> block number for this verification is: {:?}",
-        block_number
-    );
     let additional_keys = if contract_data.root != Felt::ZERO {
         verify_storage_proof(contract_data, &keys)
     } else {
