@@ -1,18 +1,19 @@
 use crate::client::RpcClient;
+use crate::utils::execute_coroutine;
 use blockifier::execution::contract_class::{
     CompiledClassV0, CompiledClassV1, RunnableCompiledClass,
 };
 use blockifier::state::errors::StateError;
 use blockifier::state::state_api::{StateReader, StateResult};
+use cairo_lang_starknet_classes::contract_class::version_id_from_serialized_sierra_program;
 use starknet::core::types::{BlockId, Felt, StarknetError};
 use starknet::providers::{Provider, ProviderError};
+use starknet_api::contract_class::SierraVersion;
 use starknet_api::core::{ClassHash, CompiledClassHash, ContractAddress, Nonce};
 use starknet_api::state::StorageKey;
 use starknet_os_types::deprecated_compiled_class::GenericDeprecatedCompiledClass;
 use starknet_os_types::sierra_contract_class::GenericSierraContractClass;
 use starknet_os_types::starknet_core_addons::decompress_starknet_core_contract_class;
-
-use crate::utils::execute_coroutine;
 
 #[derive(Clone)]
 pub struct AsyncRpcStateReader {
@@ -167,12 +168,24 @@ impl AsyncRpcStateReader {
                 let generic_sierra =
                     GenericSierraContractClass::from_bytes(fixed_sierra_json.into_bytes());
 
+                let generic_cairo_lang_class =
+                    generic_sierra.get_cairo_lang_contract_class().unwrap();
+                let (version_id, _) = version_id_from_serialized_sierra_program(
+                    &generic_cairo_lang_class.sierra_program,
+                )
+                .unwrap();
+                let sierra_version = SierraVersion::new(
+                    version_id.major.try_into().unwrap(),
+                    version_id.minor.try_into().unwrap(),
+                    version_id.patch.try_into().unwrap(),
+                );
+
                 // Try compilation
                 match generic_sierra.compile() {
                     Ok(compiled_class) => {
                         println!("✅ Sierra compilation succeeded!");
                         let versioned_casm = compiled_class
-                            .to_blockifier_contract_class()
+                            .to_blockifier_contract_class(sierra_version)
                             .map_err(to_state_err)?;
 
                         // Convert VersionedCasm to CompiledClassV1 using TryFrom

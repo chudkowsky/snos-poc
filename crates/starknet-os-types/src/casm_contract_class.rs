@@ -25,9 +25,10 @@ pub struct GenericCasmContractClass {
 
 fn blockifier_contract_class_from_cairo_lang_class(
     cairo_lang_class: CairoLangCasmClass,
+    sierra_version: SierraVersion,
 ) -> Result<BlockifierCasmClass, ContractClassError> {
     let blockifier_class =
-        BlockifierCasmClass::try_from((cairo_lang_class, SierraVersion::default())).unwrap();
+        BlockifierCasmClass::try_from((cairo_lang_class, sierra_version)).unwrap();
     Ok(blockifier_class)
 }
 
@@ -59,10 +60,14 @@ impl GenericCasmContractClass {
         ))
     }
 
-    fn build_blockifier_class(&self) -> Result<BlockifierCasmClass, ContractClassError> {
+    fn build_blockifier_class(
+        &self,
+        sierra_version: SierraVersion,
+    ) -> Result<BlockifierCasmClass, ContractClassError> {
         if let Some(cairo_lang_class) = self.cairo_lang_contract_class.get() {
             return blockifier_contract_class_from_cairo_lang_class(
                 cairo_lang_class.as_ref().clone(),
+                sierra_version,
             );
         }
 
@@ -71,7 +76,10 @@ impl GenericCasmContractClass {
             self.cairo_lang_contract_class
                 .set(Arc::new(cairo_lang_class.clone()))
                 .expect("cairo-lang class is already set");
-            return blockifier_contract_class_from_cairo_lang_class(cairo_lang_class);
+            return blockifier_contract_class_from_cairo_lang_class(
+                cairo_lang_class,
+                sierra_version,
+            );
         }
 
         Err(ContractClassError::ConversionError(
@@ -86,9 +94,10 @@ impl GenericCasmContractClass {
 
     pub fn get_blockifier_contract_class(
         &self,
+        sierra_version: SierraVersion,
     ) -> Result<&BlockifierCasmClass, ContractClassError> {
         self.blockifier_contract_class
-            .get_or_try_init(|| self.build_blockifier_class().map(Arc::new))
+            .get_or_try_init(|| self.build_blockifier_class(sierra_version).map(Arc::new))
             .map(|boxed| boxed.as_ref())
     }
 
@@ -97,8 +106,11 @@ impl GenericCasmContractClass {
         Ok(cairo_lang_class.clone())
     }
 
-    pub fn to_blockifier_contract_class(self) -> Result<BlockifierCasmClass, ContractClassError> {
-        let blockifier_class = self.get_blockifier_contract_class()?;
+    pub fn to_blockifier_contract_class(
+        self,
+        sierra_version: SierraVersion,
+    ) -> Result<BlockifierCasmClass, ContractClassError> {
+        let blockifier_class = self.get_blockifier_contract_class(sierra_version)?;
         Ok(blockifier_class.clone())
     }
 
@@ -164,13 +176,13 @@ impl From<BlockifierCasmClass> for GenericCasmContractClass {
     }
 }
 
-impl TryFrom<GenericCasmContractClass> for BlockifierCasmClass {
-    type Error = ContractClassError;
-
-    fn try_from(contract_class: GenericCasmContractClass) -> Result<Self, Self::Error> {
-        contract_class.to_blockifier_contract_class()
-    }
-}
+// impl TryFrom<GenericCasmContractClass> for BlockifierCasmClass {
+//     type Error = ContractClassError;
+//
+//     fn try_from(input: (GenericCasmContractClass,SierraVersion)) -> Result<Self, Self::Error> {
+//         input.0.to_blockifier_contract_class(input.1)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

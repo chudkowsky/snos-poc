@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use blockifier::transaction::account_transaction::AccountTransaction;
 use blockifier::transaction::errors::TransactionExecutionError;
+use cairo_lang_starknet_classes::contract_class::version_id_from_serialized_sierra_program;
 use rpc_client::RpcClient;
 use starknet::core::types::{
     BlockId, DeclareTransaction, DeclareTransactionV0, DeclareTransactionV1, DeclareTransactionV2,
@@ -213,8 +214,20 @@ async fn create_class_info(
             starknet::core::types::ContractClass::Sierra(sierra) => {
                 let generic_sierra = GenericSierraContractClass::from(sierra.clone());
                 let flattened_sierra = generic_sierra.clone().to_starknet_core_contract_class()?;
+                let generic_cairo_lang_class = generic_sierra.get_cairo_lang_contract_class()?;
+                let (version_id, _) = version_id_from_serialized_sierra_program(
+                    &generic_cairo_lang_class.sierra_program,
+                )
+                .unwrap();
+                let sierra_version = SierraVersion::new(
+                    version_id.major.try_into().unwrap(),
+                    version_id.minor.try_into().unwrap(),
+                    version_id.patch.try_into().unwrap(),
+                );
                 let contract_class = starknet_api::contract_class::ContractClass::V1(
-                    generic_sierra.compile()?.to_blockifier_contract_class()?,
+                    generic_sierra
+                        .compile()?
+                        .to_blockifier_contract_class(sierra_version)?,
                 );
 
                 (

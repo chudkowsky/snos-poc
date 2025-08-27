@@ -24,6 +24,7 @@ pathfinder-common = { workspace = true}
 pathfinder-serde = {workspace = true}
 num-bigint = {workspace = true}
 bitvec = { version = "1.0", default-features = false, features = ["std"] }
+cairo-lang-starknet-classes = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4"

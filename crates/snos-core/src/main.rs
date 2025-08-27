@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Build the input configuration
     let input = PieGenerationInput {
         rpc_url: "https://pathfinder-snos.d.karnot.xyz".to_string(),
-        blocks: vec![1309265],
+        blocks: vec![924072],
         chain_config: ChainConfig::default(), // Uses Sepolia defaults
         os_hints_config: OsHintsConfiguration::default(), // Uses sensible defaults
         output_path: None,

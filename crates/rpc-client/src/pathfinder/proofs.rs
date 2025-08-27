@@ -345,6 +345,7 @@ pub fn verify_proof<H: SimpleHashFunction>(
                     // 1. We correctly moved towards the target as far as possible, and
                     // 2. Hashing all the nodes along the path results in the root hash, which means
                     // 3. The target definitely does not exist in this tree
+                    log::debug!(">>>>>>> the node here is: {:?}", node);
                     return Err(ProofVerificationError::NonExistenceProof {
                         key,
                         height: Height(DEFAULT_STORAGE_TREE_HEIGHT - (index - start) as u64),

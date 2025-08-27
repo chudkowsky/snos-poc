@@ -2,7 +2,9 @@ use blockifier::execution::call_info::CallInfo;
 use blockifier::transaction::objects::TransactionExecutionInfo;
 use cairo_vm::Felt252;
 use rpc_client::pathfinder::client::ClientError;
-use rpc_client::pathfinder::proofs::{ContractData, PathfinderClassProof, PathfinderProof};
+use rpc_client::pathfinder::proofs::{
+    verify_storage_proof, ContractData, PathfinderClassProof, PathfinderProof,
+};
 use rpc_client::RpcClient;
 use serde_json;
 use starknet_api::contract_address;
@@ -272,9 +274,20 @@ async fn get_storage_proof_for_contract<KeyIter: Iterator<Item = StorageKey>>(
     };
 
     // log::debug!("the keys here are: {:?}", keys);
-    // log::debug!("the contract data here is: {:?}", contract_data);
-    // let additional_keys = verify_storage_proof(contract_data, &keys);
-    let additional_keys = vec![];
+    log::debug!(">>>>>>> the contract data here is: {:?}", contract_data);
+    log::debug!(
+        ">>>>>>> contract address for verification is: {:?}",
+        contract_address
+    );
+    log::debug!(
+        ">>>>>>> block number for this verification is: {:?}",
+        block_number
+    );
+    let additional_keys = if contract_data.root != Felt::ZERO {
+        verify_storage_proof(contract_data, &keys)
+    } else {
+        vec![]
+    };
 
     // Fetch additional proofs required to fill gaps in the storage trie that could make
     // the OS crash otherwise.
